@@ -44,12 +44,12 @@ ENV JUPYTER_TOKEN=ahnaeziZ1mouthahxa6a
 
 
 # enable ssh for root on port 20022 with key auth
-RUN apt-get update && apt-get install -y openssh-server
-RUN sed -i 's/#Port 22/Port 20022/' /etc/ssh/sshd_config
-RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-EXPOSE 20022
+# RUN apt-get update && apt-get install -y openssh-server
+# RUN sed -i 's/#Port 22/Port 20022/' /etc/ssh/sshd_config
+# RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+# EXPOSE 20022
 # RUN mkdir /root/.ssh/
 
-CMD ["service", "ssh", "start", "-D"]
+# CMD ["service", "ssh", "start", "-D"]
 #CMD ["/usr/sbin/sshd", "-D"]
 #CMD ["jupyter", "notebook", "--no-browser", "--ip=0.0.0.0"]
