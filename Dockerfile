@@ -40,7 +40,7 @@ ENV JUPYTER_TOKEN=ahnaeziZ1mouthahxa6a
 # when importing/using pandas
 # the error is, that the system-included version is older than the
 # version by conda. therefore force using the conda provided version
-ENV LD_PRELOAD=/opt/conda/lib/libstdc++.so
+# ENV LD_PRELOAD=/opt/conda/lib/libstdc++.so
 
 
 # enable ssh for root on port 20022 with key auth
