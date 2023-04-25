@@ -11,7 +11,6 @@ from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 import torchmetrics
 
 from ndvi_prediction.training_helpers import InputMonitor, OutputMonitor, LogHparamsMetricCallback
-import models
 
 import sen12tp
 import sen12tp.constants
