@@ -28,7 +28,7 @@ class MimoUnetModel(pl.LightningModule):
         self.nr_subnetworks = nr_subnetworks
         self.nr_input_channels = nr_input_channels
         self.nr_output_channels = nr_output_channels
-        self.criterion = UncertaintyLoss.from_name(loss)
+        self.loss_fn = UncertaintyLoss.from_name(loss)
         self.weight_decay = weight_decay
         self.learning_rate = learning_rate
         self.seed = seed
