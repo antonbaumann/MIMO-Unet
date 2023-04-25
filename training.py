@@ -78,6 +78,10 @@ class MimoUnetModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
+        
+        print(x.shape)
+        print(y.shape)
+
         p1, p2 = self(x)
 
         loss = self.loss_fn.forward(p1, p2, y)
