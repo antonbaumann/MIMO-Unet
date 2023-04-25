@@ -100,12 +100,7 @@ def get_argument_parser() -> ArgumentParser:
     parser.add_argument("--limit_val_batches", type=int, required=False, default=1.0)
     parser.add_argument("--gpus", type=int, default=1, help="Number of GPUs to use for training.")
     parser = sen12tp.dataset.BaseDataModule.add_model_specific_args(parser)
-
-    # get model specific command line arguments
-    for model_name in dir(models):
-        model_cls = getattr(models, model_name)
-        if "add_model_specific_args" in dir(model_cls):
-           parser = model_cls.add_model_specific_args(parser)
+    
     return parser
 
 
