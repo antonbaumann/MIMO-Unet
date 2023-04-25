@@ -95,6 +95,9 @@ class MimoUnetModel(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
+        print(x.shape)
+        print(y.shape)
+        
         p1, p2 = self(x)
 
         val_loss = self.loss_fn.forward(p1, p2, y)
