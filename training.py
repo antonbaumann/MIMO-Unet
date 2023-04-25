@@ -117,8 +117,6 @@ class MimoUnetModel(pl.LightningModule):
     
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser):
-        parser = UNet.add_model_specific_args(parser)
-        
         parser = parent_parser.add_argument_group(title="NDVIModel")
         parser.add_argument("--nr_subnetworks", type=int, default=3)
         parser.add_argument("--nr_channels", type=int, default=1)
@@ -126,7 +124,10 @@ class MimoUnetModel(pl.LightningModule):
         parser.add_argument("--weight_decay", type=float, default=1e-4)
         parser.add_argument("--loss", type=str, default="laplace_nll")
         parser.add_argument("--seed", type=int, default=42)
-        return parent_parser
+
+        parser = UNet.add_model_specific_args(parser)
+
+        return parser
 
 
 def main(args: Namespace):
