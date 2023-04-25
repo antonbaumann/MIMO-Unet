@@ -71,7 +71,7 @@ class MimoUnetModel(pl.LightningModule):
         B, S, C_in, H, W = x.shape
 
         assert S == self.nr_subnetworks, "channel dimension must match nr_subnetworks"
-        assert C_in == self.input_channels, "channel dimension must match input_channels"
+        assert C_in == self.nr_input_channels, "channel dimension must match input_channels"
 
         # reshape input tensor to match MIMO architecture
         # [B, S, C, H, W] -> [B, S*C, H, W]
@@ -108,7 +108,7 @@ class MimoUnetModel(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
-        
+
         x = self._reshape_for_subnetwors(x)
         y = self._reshape_for_subnetwors(y)
 
