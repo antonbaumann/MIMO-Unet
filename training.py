@@ -124,10 +124,7 @@ class MimoUnetModel(pl.LightningModule):
         parser.add_argument("--weight_decay", type=float, default=1e-4)
         parser.add_argument("--loss", type=str, default="laplace_nll")
         parser.add_argument("--seed", type=int, default=42)
-
-        parser = UNet.add_model_specific_args(parser)
-
-        return parser
+        return parent_parser
 
 
 def main(args: Namespace):
@@ -175,6 +172,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     parser = get_argument_parser()
     parser = MimoUnetModel.add_model_specific_args(parser)
+    parser = UNet.add_model_specific_args(parser)
     args = parser.parse_args()
     logger.debug("command line arguments: %s", args)
     main(args)  
