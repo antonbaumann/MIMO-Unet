@@ -32,6 +32,7 @@ class MimoUnetModel(pl.LightningModule):
         self.weight_decay = weight_decay
         self.learning_rate = learning_rate
         self.seed = seed
+        self.ndvi_kwargs = {"vmin": 0, "vmax": 1, "cmap": "RdYlBu"}
 
         self.model = UNet(
             in_channels=nr_subnetworks * nr_input_channels,
@@ -79,7 +80,7 @@ class MimoUnetModel(pl.LightningModule):
                 metric_attribute=metric_name,
                 batch_size=self.trainer.datamodule.batch_size,
             )
-            
+
     def forward(self, x: torch.Tensor):
         """
         Args:
