@@ -117,6 +117,8 @@ class MimoUnetModel(pl.LightningModule):
     
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser):
+        parser = UNet.add_model_specific_args(parser)
+        
         parser = parent_parser.add_argument_group(title="NDVIModel")
         parser.add_argument("--nr_subnetworks", type=int, default=3)
         parser.add_argument("--nr_channels", type=int, default=1)
@@ -171,7 +173,7 @@ def main(args: Namespace):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     parser = get_argument_parser()
-    parser = UNet.add_model_specific_args(parser)
+    parser = MimoUnetModel.add_model_specific_args(parser)
     args = parser.parse_args()
     logger.debug("command line arguments: %s", args)
     main(args)  
