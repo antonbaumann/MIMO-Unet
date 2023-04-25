@@ -27,7 +27,7 @@ RUN jupyter contrib nbextension install --system --Application.log_level=WARN
 RUN jupyter nbextension enable toc2/main --system
 RUN jupyter nbextension enable code_prettify --system
 
-COPY opt-jupyter_notebook_config.py /opt/conda/etc/jupyter/jupyter_notebook_config.py
+COPY ./opt-jupyter_notebook_config.py /opt/conda/etc/jupyter/jupyter_notebook_config.py
 # install config
 #RUN mkdir -p /home/l91bthro/.jupyter/
 #COPY jupyter_notebook_config.py /home/l91bthro/.jupyter/
