@@ -47,6 +47,19 @@ class MimoUnetModel(pl.LightningModule):
         self.save_hyperparameters()
         self.save_hyperparameters({"loss_name": loss})
 
+    def _reshape_for_subnetwors(self, x: torch.Tensor):
+        """
+        Args:
+            x: [B, C, H, W]
+        Returns:
+            x: [B // S, S, C, H, W]
+        """
+        B, C, H, W = x.shape
+        assert B % self.nr_subnetworks == 0, "batch dimension must be divisible by nr_subnetworks"
+
+        # [B, C, H, W] -> [B // S, S, C, H, W]
+        return x.view(B // self.nr_subnetworks, self.nr_subnetworks, C, H, W)
+
     def forward(self, x: torch.Tensor):
         """
         Args:
@@ -79,8 +92,8 @@ class MimoUnetModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
         
-        print(x.shape)
-        print(y.shape)
+        x = self._reshape_for_subnetwors(x)
+        y = self._reshape_for_subnetwors(y)
 
         p1, p2 = self(x)
 
@@ -95,9 +108,10 @@ class MimoUnetModel(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
-        print(x.shape)
-        print(y.shape)
         
+        x = self._reshape_for_subnetwors(x)
+        y = self._reshape_for_subnetwors(y)
+
         p1, p2 = self(x)
 
         val_loss = self.loss_fn.forward(p1, p2, y)
