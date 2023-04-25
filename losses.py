@@ -18,7 +18,7 @@ class UncertaintyLoss(torch.nn.Module, ABC):
         pass
 
     @classmethod
-    def from_name(cls, name: str, a: float, b: float) -> "UncertaintyLoss":
+    def from_name(cls, name: str) -> "UncertaintyLoss":
         if name == "gaussian_nll":
             return GaussianNLL()
         elif name == "laplace_nll":
