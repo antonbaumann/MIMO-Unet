@@ -56,6 +56,7 @@ class OutputMonitor(pl.Callback):
         logger,
     ):
         ndvi_kwargs = pl_module.ndvi_kwargs
+        print(img_data.shape)
         self._log_matrix(img_data, log_name, global_step, pl_module, logger=logger, **ndvi_kwargs)
 
     def _log_error_map(
