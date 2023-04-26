@@ -136,7 +136,12 @@ class MimoUnetModel(pl.LightningModule):
         self.log("train_loss", loss, batch_size=self.trainer.datamodule.batch_size)
         self._log_metrics(y=y, y_hat=y_hat, mode="train", batch_idx=batch_idx)
 
-        return {"loss": loss, "preds": y_hat, "std_map": self._reshape_for_plotting(aleatoric_std), "err_map": self._reshape_for_plotting(y_hat - y)}
+        return {
+            "loss": loss,
+            "preds": self._reshape_for_plotting(y_hat), 
+            "std_map": self._reshape_for_plotting(aleatoric_std), 
+            "err_map": self._reshape_for_plotting(y_hat - y),
+        }
     
     def validation_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
@@ -154,7 +159,12 @@ class MimoUnetModel(pl.LightningModule):
 
         self._log_metrics(y=y, y_hat=y_hat, mode="val", batch_idx=batch_idx)
 
-        return {"loss": val_loss, "preds": y_hat, "std_map": self._reshape_for_plotting(aleatoric_std), "err_map": self._reshape_for_plotting(y_hat - y)}
+        return {
+            "loss": val_loss, 
+            "preds": self._reshape_for_plotting(y_hat), 
+            "std_map": self._reshape_for_plotting(aleatoric_std), 
+            "err_map": self._reshape_for_plotting(y_hat - y),
+        }
     
     def predict_step(self, batch, batch_idx, dataloader_idx):
         x = batch["image"]
