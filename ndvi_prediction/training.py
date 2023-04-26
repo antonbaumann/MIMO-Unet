@@ -63,7 +63,7 @@ def get_datamodule(args_dict: dict) -> sen12tp.dataset.BaseDataModule:
     elif args_dict["data_module"] == "zarr":
         dm = sen12tp.zarr_dataset.ZarrDataModule(
             model_input=args_dict["input"],
-            model_target=args_dict["target"],
+            model_taret=args_dict["target"],
             **args_dict
         )
     else:

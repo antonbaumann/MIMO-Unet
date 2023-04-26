@@ -123,9 +123,6 @@ class MimoUnetModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
-
-        if x.shape[0] != self.trainer.datamodule.batch_size:
-            return
         
         x = self._reshape_for_subnetwors(x)
         y = self._reshape_for_subnetwors(y)
@@ -148,9 +145,6 @@ class MimoUnetModel(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
-
-        if x.shape[0] != self.trainer.datamodule.batch_size:
-            return
 
         x = self._reshape_for_subnetwors(x)
         y = self._reshape_for_subnetwors(y)
