@@ -101,7 +101,7 @@ class UNet(nn.Module):
         out_channels: int,
         groups: int = 1,
         bilinear: bool = True,
-        filter_base_count: int = 60,
+        filter_base_count: int = 120,
         center_dropout_rate: float = 0.0,
         final_dropout_rate: float = 0.0,
         use_pooling_indices: bool = False,
