@@ -101,7 +101,7 @@ class UNet(nn.Module):
         out_channels: int,
         groups: int = 1,
         bilinear: bool = True,
-        filter_base_count: int = 120,
+        filter_base_count: int = 60,
         center_dropout_rate: float = 0.0,
         final_dropout_rate: float = 0.0,
         use_pooling_indices: bool = False,
@@ -132,12 +132,27 @@ class UNet(nn.Module):
         self.factor = 2 if (self.bilinear or self.use_pooling_indices) else 1
         self.down4 = Down(8 * filter_base_count, 16 * filter_base_count // self.factor, self.use_pooling_indices)
         self.center_dropout = nn.Dropout(p=center_dropout_rate)
-        self.up1 = Up(16 * filter_base_count, 8 * filter_base_count // self.factor, self.bilinear, self.use_pooling_indices)
-        self.up2 = Up(8 * filter_base_count, 4 * filter_base_count // self.factor, self.bilinear, self.use_pooling_indices)
-        self.up3 = Up(4 * filter_base_count, 2 * filter_base_count // self.factor, self.bilinear, self.use_pooling_indices)
-        self.up4 = Up(2 * filter_base_count, filter_base_count, self.bilinear, self.use_pooling_indices, groups=groups)
+        self.up1 = Up(
+            16 * filter_base_count, 8 * filter_base_count // self.factor, self.bilinear, self.use_pooling_indices,
+            groups=groups,
+        )
+        self.up2 = Up(
+            8 * filter_base_count, 4 * filter_base_count // self.factor, self.bilinear, self.use_pooling_indices,
+            groups=groups,
+        )
+        self.up3 = Up(
+            4 * filter_base_count, 2 * filter_base_count // self.factor, self.bilinear, self.use_pooling_indices,
+            groups=groups,
+        )
+        self.up4 = Up(
+            2 * filter_base_count, filter_base_count, self.bilinear, self.use_pooling_indices, 
+            groups=groups,
+        )
         self.final_dropout = nn.Dropout(p=final_dropout_rate)
-        self.outc = OutConv(filter_base_count, out_channels, groups=groups)
+        self.outc = OutConv(
+            filter_base_count, out_channels,
+            groups=groups,
+        )
 
     def forward(self, x):
         x1 = self.inc(x)
