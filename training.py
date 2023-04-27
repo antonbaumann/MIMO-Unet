@@ -37,6 +37,7 @@ class MimoUnetModel(pl.LightningModule):
         self.model = UNet(
             in_channels=nr_subnetworks * nr_input_channels,
             out_channels=nr_subnetworks * nr_output_channels * 2,
+            groups=nr_subnetworks,
             bilinear=True,
         )
 

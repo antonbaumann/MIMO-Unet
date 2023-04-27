@@ -86,9 +86,9 @@ class Up(nn.Module):
 
 
 class OutConv(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, groups: int = 1):
         super(OutConv, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, groups=groups)
 
     def forward(self, x):
         return self.conv(x)
@@ -99,8 +99,9 @@ class UNet(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
+        groups: int = 1,
         bilinear: bool = True,
-        filter_base_count: int = 96,
+        filter_base_count: int = 60,
         center_dropout_rate: float = 0.0,
         final_dropout_rate: float = 0.0,
         use_pooling_indices: bool = False,
@@ -136,7 +137,7 @@ class UNet(nn.Module):
         self.up3 = Up(4 * filter_base_count, 2 * filter_base_count // self.factor, self.bilinear, self.use_pooling_indices)
         self.up4 = Up(2 * filter_base_count, filter_base_count, self.bilinear, self.use_pooling_indices)
         self.final_dropout = nn.Dropout(p=final_dropout_rate)
-        self.outc = OutConv(filter_base_count, out_channels)
+        self.outc = OutConv(filter_base_count, out_channels, groups=groups)
 
     def forward(self, x):
         x1 = self.inc(x)
