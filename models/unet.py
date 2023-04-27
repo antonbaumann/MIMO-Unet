@@ -50,7 +50,7 @@ class Down(nn.Module):
 class Up(nn.Module):
     """Upscaling then double conv"""
 
-    def __init__(self, in_channels, out_channels, bilinear=True, use_pooling_indices: bool = False):
+    def __init__(self, in_channels, out_channels, bilinear=True, use_pooling_indices: bool = False, groups: int = 1):
         super().__init__()
         assert int(bilinear) + int(use_pooling_indices) <= 1, "Do not specify use_pooling_indices and bilinear together!"
         self.use_pooling_indices = use_pooling_indices
@@ -58,15 +58,15 @@ class Up(nn.Module):
         # if bilinear, use the normal convolutions to reduce the number of channels
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
-            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2)
+            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2, groups=groups)
         elif self.use_pooling_indices:
             self.up = nn.MaxUnpool2d(2, padding=0)
-            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2)
+            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2, groups=groups)
         else:
             self.up = nn.ConvTranspose2d(
-                in_channels, in_channels // 2, kernel_size=2, stride=2
+                in_channels, in_channels // 2, kernel_size=2, stride=2, groups=groups,
             )
-            self.conv = DoubleConv(in_channels, out_channels)
+            self.conv = DoubleConv(in_channels, out_channels, groups=groups)
 
     def forward(self, x1, x2, pooling_indices: Optional = None):
         if self.use_pooling_indices:
@@ -135,7 +135,7 @@ class UNet(nn.Module):
         self.up1 = Up(16 * filter_base_count, 8 * filter_base_count // self.factor, self.bilinear, self.use_pooling_indices)
         self.up2 = Up(8 * filter_base_count, 4 * filter_base_count // self.factor, self.bilinear, self.use_pooling_indices)
         self.up3 = Up(4 * filter_base_count, 2 * filter_base_count // self.factor, self.bilinear, self.use_pooling_indices)
-        self.up4 = Up(2 * filter_base_count, filter_base_count, self.bilinear, self.use_pooling_indices)
+        self.up4 = Up(2 * filter_base_count, filter_base_count, self.bilinear, self.use_pooling_indices, groups=groups)
         self.final_dropout = nn.Dropout(p=final_dropout_rate)
         self.outc = OutConv(filter_base_count, out_channels, groups=groups)
 
