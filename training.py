@@ -49,7 +49,7 @@ class MimoUnetModel(pl.LightningModule):
         self.save_hyperparameters()
         self.save_hyperparameters({"loss_name": loss})
 
-    def _reshape_for_subnetwors(self, x: torch.Tensor):
+    def _reshape_for_subnetwors(self, x: torch.Tensor, repeat: bool = False):
         """
         Args:
             x: [B, C, H, W]
@@ -60,7 +60,11 @@ class MimoUnetModel(pl.LightningModule):
         assert B % self.nr_subnetworks == 0, "batch dimension must be divisible by nr_subnetworks"
 
         # [B, C, H, W] -> [B // S, S, C, H, W]
-        return x.view(B // self.nr_subnetworks, self.nr_subnetworks, C, H, W)
+        if not repeat:
+            return x.view(B // self.nr_subnetworks, self.nr_subnetworks, C, H, W)
+        else:
+            x = x[:, None, :, :, :]
+            return x.repeat(1, self.nr_subnetworks, 1, 1, 1)
 
     def _reshape_for_plotting(self, x: torch.Tensor):
         """
@@ -147,8 +151,8 @@ class MimoUnetModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
 
-        x = self._reshape_for_subnetwors(x)
-        y = self._reshape_for_subnetwors(y)
+        x = self._reshape_for_subnetwors(x, repeat=True)
+        y = self._reshape_for_subnetwors(y, repeat=True)
 
         p1, p2 = self(x)
 
