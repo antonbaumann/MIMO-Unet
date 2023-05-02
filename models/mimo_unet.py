@@ -207,7 +207,11 @@ class UNet(nn.Module):
         ind2s = []
 
         for i in range(S):
+            print('iter', i)
+            print('input', x.shape)
+            print('x', x[:, i].shape)
             x1 = self.in_convs[i](x[:, i])
+            print('x1', x1.shape)
             x2, ind2 = self.down1s[i](x1)
 
             x1s.append(x1)
