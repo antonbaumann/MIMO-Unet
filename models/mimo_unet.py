@@ -158,19 +158,19 @@ class UNet(nn.Module):
             in_channels=16 * filter_base_count * num_subnetworks, 
             out_channels=8 * filter_base_count * num_subnetworks // self.factor, 
             bilinear=self.bilinear, 
-            pooling_indices=self.use_pooling_indices,
+            use_pooling_indices=self.use_pooling_indices,
         )
         self.up2 = Up(
             in_channels=8 * filter_base_count * num_subnetworks, 
             out_channels=4 * filter_base_count * num_subnetworks // self.factor, 
             bilinear=self.bilinear, 
-            pooling_indices=self.use_pooling_indices,
+            use_pooling_indices=self.use_pooling_indices,
         )
         self.up3 = Up(
             in_channels=4 * filter_base_count * num_subnetworks, 
             out_channels=2 * filter_base_count * num_subnetworks // self.factor, 
             bilinear=self.bilinear, 
-            pooling_indices=self.use_pooling_indices,
+            use_pooling_indices=self.use_pooling_indices,
         )
 
         self.up4s = nn.ModuleList()
