@@ -231,6 +231,7 @@ class UNet(nn.Module):
 
         logits = []
         for i in range(S):
+            print('up3', x.shape)
             x_i = self.up4s[i](x, x1s[i], ind2s[i])
             x_i = self.final_dropouts[i](x)
             logits[i] = self.outcs[i](x_i)
