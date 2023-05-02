@@ -176,7 +176,7 @@ class UNet(nn.Module):
         self.up4s = nn.ModuleList()
         for i in range(num_subnetworks):
             self.up4s.append(Up(
-                in_channels=2 * filter_base_count, 
+                in_channels=2 * filter_base_count * num_subnetworks, 
                 out_channels=filter_base_count, 
                 bilinear=self.bilinear, 
                 use_pooling_indices=self.use_pooling_indices, 
