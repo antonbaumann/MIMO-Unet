@@ -231,9 +231,9 @@ class UNet(nn.Module):
 
         logits = []
         for i in range(S):
-            x_i = self.up4(x, x1s[i], ind2s[i])
+            x_i = self.up4s(x, x1s[i], ind2s[i])
             x_i = self.final_dropouts(x)
-            logits[i] = self.outc(x_i)
+            logits[i] = self.outcs(x_i)
         
         return torch.stack(logits, axis=1)
 
