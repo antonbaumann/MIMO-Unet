@@ -231,7 +231,6 @@ class UNet(nn.Module):
             x_i = self.final_dropouts[i](x_i)
             logits.append(self.outcs[i](x_i))
         logits = torch.stack(logits, axis=1)
-        print(logits.shape)
         return logits
 
     @staticmethod
