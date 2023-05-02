@@ -35,8 +35,8 @@ class MimoUnetModel(pl.LightningModule):
         self.ndvi_kwargs = {"vmin": 0, "vmax": 1, "cmap": "RdYlBu"}
 
         self.model = UNet(
-            in_channels=nr_subnetworks * nr_input_channels,
-            out_channels=nr_subnetworks * nr_output_channels * 2,
+            in_channels=nr_input_channels,
+            out_channels=nr_output_channels * 2,
             num_subnetworks=nr_subnetworks,
             bilinear=True,
         )
