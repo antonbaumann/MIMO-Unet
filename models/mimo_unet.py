@@ -207,11 +207,7 @@ class UNet(nn.Module):
         ind2s = []
 
         for i in range(S):
-            print('iter', i)
-            print('input', x.shape)
-            print('x', x[:, i].shape)
             x1 = self.in_convs[i](x[:, i])
-            print('x1', x1.shape)
             x2, ind2 = self.down1s[i](x1)
 
             x1s.append(x1)
@@ -231,13 +227,12 @@ class UNet(nn.Module):
 
         logits = []
         for i in range(S):
-            print('up3', x.shape)
-            print('x1', x1s[i].shape)
             x_i = self.up4s[i](x, x1s[i], ind2s[i])
             x_i = self.final_dropouts[i](x)
             logits.append(self.outcs[i](x_i))
-        
-        return torch.stack(logits, axis=1)
+        logits = torch.stack(logits, axis=1)
+        print(logits.shape)
+        return logits
 
     @staticmethod
     def add_model_specific_args(parent_parser):
