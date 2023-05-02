@@ -182,13 +182,13 @@ class UNet(nn.Module):
                 use_pooling_indices=self.use_pooling_indices, 
             ))
 
-        self.final_dropouts = torch.ModuleList()
+        self.final_dropouts = nn.ModuleList()
         for i in range(num_subnetworks):
             self.final_dropout.append(
                 nn.Dropout(p=final_dropout_rate)
             )
 
-        self.outcs = torch.ModuleList()
+        self.outcs = nn.ModuleList()
         for i in range(num_subnetworks):
             self.outcs.append(OutConv(
                 in_channels=filter_base_count, 
