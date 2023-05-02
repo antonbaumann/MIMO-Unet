@@ -5,7 +5,7 @@ import logging
 import pytorch_lightning as pl
 import torch
 from losses import UncertaintyLoss
-from models.unet import UNet
+from models.mimo_unet import UNet
 from ndvi_prediction.training import get_datamodule, get_default_callbacks, get_argument_parser, get_metrics_dict
 
 logger = logging.getLogger(__name__)
@@ -112,13 +112,13 @@ class MimoUnetModel(pl.LightningModule):
 
         # reshape input tensor to match MIMO architecture
         # [B, S, C, H, W] -> [B, S*C, H, W]
-        x = x.view(B, self.nr_subnetworks * self.nr_input_channels, H, W)
+        # x = x.view(B, self.nr_subnetworks * self.nr_input_channels, H, W)
 
         # [B, 2*S*C_out, H, W]
         out = self.model(x)
 
         # [B, 2*S*C_out, H, W] -> [B, S, 2*C_out, H, W]
-        out = out.view(B, self.nr_subnetworks, 2 * self.nr_output_channels, H, W)
+        # out = out.view(B, self.nr_subnetworks, 2 * self.nr_output_channels, H, W)
 
         # [B, S, C_out, H, W]
         p1 = out[:, :, :self.nr_output_channels, ...]
