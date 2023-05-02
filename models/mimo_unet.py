@@ -155,19 +155,19 @@ class UNet(nn.Module):
         )
         self.center_dropout = nn.Dropout(p=center_dropout_rate)
         self.up1 = Up(
-            in_channels=16 * filter_base_count * num_subnetworks // self.factor, 
+            in_channels=16 * filter_base_count * num_subnetworks, 
             out_channels=8 * filter_base_count * num_subnetworks // self.factor, 
             bilinear=self.bilinear, 
             use_pooling_indices=self.use_pooling_indices,
         )
         self.up2 = Up(
-            in_channels=8 * filter_base_count * num_subnetworks // self.factor, 
+            in_channels=8 * filter_base_count * num_subnetworks, 
             out_channels=4 * filter_base_count * num_subnetworks // self.factor, 
             bilinear=self.bilinear, 
             use_pooling_indices=self.use_pooling_indices,
         )
         self.up3 = Up(
-            in_channels=4 * filter_base_count * num_subnetworks // self.factor, 
+            in_channels=4 * filter_base_count * num_subnetworks, 
             out_channels=2 * filter_base_count * num_subnetworks // self.factor, 
             bilinear=self.bilinear, 
             use_pooling_indices=self.use_pooling_indices,
