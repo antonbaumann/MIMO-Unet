@@ -184,7 +184,7 @@ class UNet(nn.Module):
 
         self.final_dropouts = nn.ModuleList()
         for i in range(num_subnetworks):
-            self.final_dropout.append(
+            self.final_dropouts.append(
                 nn.Dropout(p=final_dropout_rate)
             )
 
@@ -228,7 +228,7 @@ class UNet(nn.Module):
         logits = []
         for i in range(S):
             x_i = self.up4(x, x1s[i], ind2s[i])
-            x_i = self.final_dropout(x)
+            x_i = self.final_dropouts(x)
             logits[i] = self.outc(x_i)
         
         return torch.stack(logits, axis=1)
