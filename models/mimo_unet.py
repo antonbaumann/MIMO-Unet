@@ -191,7 +191,7 @@ class UNet(nn.Module):
         self.outcs = nn.ModuleList()
         for i in range(num_subnetworks):
             self.outcs.append(OutConv(
-                in_channels=filter_base_count + filter_base_count, 
+                in_channels=filter_base_count, 
                 out_channels=out_channels,
             ))
 
