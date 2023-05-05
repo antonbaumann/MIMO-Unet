@@ -1,7 +1,7 @@
 import logging
 from torch import nn
 
-from unet_modules import Up, Down, DoubleConv, OutConv
+from .unet_modules import Up, Down, DoubleConv, OutConv
 
 
 logger = logging.getLogger(__name__)
