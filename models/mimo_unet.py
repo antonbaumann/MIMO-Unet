@@ -37,12 +37,12 @@ class MimoUnetModel(pl.LightningModule):
         self.seed = seed
 
         self.model = MimoUNet( 
-            in_channels=in_channels,
-            out_channels=out_channels,
-            num_subnetworks=num_subnetworks,
-            filter_base_count=filter_base_count,
-            center_dropout_rate=center_dropout_rate,
-            final_dropout_rate=final_dropout_rate,
+            in_channels=self.in_channels,
+            out_channels=self.out_channels,
+            num_subnetworks=self.num_subnetworks,
+            filter_base_count=self.filter_base_count,
+            center_dropout_rate=self.center_dropout_rate,
+            final_dropout_rate=self.final_dropout_rate,
             bilinear=True,
             use_pooling_indices=False,
         )
