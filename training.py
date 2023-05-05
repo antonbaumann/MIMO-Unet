@@ -211,7 +211,7 @@ def main(args: Namespace):
 
     model = MimoUnetModel(
         in_channels=len(dm.model_inputs),
-        out_channels=len(dm.model_targets),
+        out_channels=len(dm.model_targets) * 2,
         num_subnetworks=args.num_subnetworks,
         filter_base_count=args.filter_base_count,
         center_dropout_rate=args.center_dropout_rate,
