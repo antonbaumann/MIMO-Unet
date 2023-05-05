@@ -106,10 +106,6 @@ class OutputMonitor(pl.Callback):
             self._log_std_map(
                 std_map=outputs["aleatoric_std_map"], log_name="train/{veg_index}_std", **kwargs
             )
-            if 'epistemic_std_map' in outputs:
-                self._log_std_map(
-                    std_map=outputs["epistemic_std_map"], log_name="train/{veg_index}_epistemic_std", **kwargs
-                )
 
     def on_validation_batch_end(
         self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
@@ -136,6 +132,10 @@ class OutputMonitor(pl.Callback):
             self._log_std_map(
                 std_map=outputs["std_map"], log_name="val/{veg_index}_std", **kwargs
             )
+            if 'epistemic_std_map' in outputs:
+                self._log_std_map(
+                    std_map=outputs["epistemic_std_map"], log_name="train/{veg_index}_epistemic_std", **kwargs
+                )
 
 
 class InputMonitor(pl.Callback):
