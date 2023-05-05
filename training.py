@@ -156,6 +156,8 @@ class MimoUnetModel(pl.LightningModule):
         x = self._reshape_for_subnetwors(x, repeat=True)
         y = self._reshape_for_subnetwors(y, repeat=True)
 
+        print(x.shape, y.shape)
+
         p1, p2 = self(x)
 
         val_loss = self.loss_fn.forward(p1, p2, y)
