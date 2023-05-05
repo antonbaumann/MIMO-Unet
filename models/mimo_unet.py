@@ -117,7 +117,7 @@ class MimoUnetModel(pl.LightningModule):
         return {
             "loss": loss,
             "preds": self._reshape_for_plotting(y_hat), 
-            "std_map": self._reshape_for_plotting(aleatoric_std), 
+            "aleatoric_std_map": self._reshape_for_plotting(aleatoric_std), 
             "err_map": self._reshape_for_plotting(y_hat - y),
         }
     
@@ -135,22 +135,12 @@ class MimoUnetModel(pl.LightningModule):
         # [B, S, 1, H, W]
         y_hat = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2).mean(dim=1)
-        
         y_hat_mean = y_hat.mean(dim=1, keepdim=True)
-
-        print('val_loss', val_loss.shape)
-        print('y_hat', y_hat.shape)
-        print('aleatoric_std', aleatoric_std.shape)
-        print('y_hat_mean', y_hat_mean.shape)
 
         if self.num_subnetworks == 1:
             epistemic_std = torch.zeros_like(aleatoric_std)
         else:
             epistemic_std = ((torch.sum(y_hat - y_hat_mean, dim=1) ** 2) * (1 / (self.num_subnetworks - 1))) ** 0.5
-        
-        y_hat_mean = y_hat_mean.squeeze(dim=1)
-        print('y_hat_mean', y_hat_mean.shape)
-        print('y', y.shape)
 
         self.log("val_loss", val_loss.mean(), batch_size=self.trainer.datamodule.batch_size)
         for subnetwork_idx in range(val_loss.shape[0]):
@@ -161,7 +151,7 @@ class MimoUnetModel(pl.LightningModule):
             "preds": y_hat_mean, 
             "aleatoric_std_map": aleatoric_std, 
             "epistemic_std_map": epistemic_std,
-            "err_map": y_hat_mean - y.mean(dim=1),
+            "err_map": y_hat_mean.squeeze(dim=1) - y.mean(dim=1),
         }
 
     def configure_optimizers(self):
