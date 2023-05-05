@@ -36,7 +36,7 @@ def main(args: Namespace):
         max_epochs=args.max_epochs,
         default_root_dir=args.checkpoint_path,
         log_every_n_steps=100,
-        limit_train_batches=500,
+        limit_train_batches=300,
     )
     trainer.started_at = str(datetime.now().isoformat(timespec="seconds"))
     trainer.fit(model, dm)
