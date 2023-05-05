@@ -70,14 +70,14 @@ class MimoUnetModel(pl.LightningModule):
             x: [B // S, S, C, H, W]
         """
         B, C, H, W = x.shape
-        assert B % self.nr_subnetworks == 0, "batch dimension must be divisible by nr_subnetworks"
+        assert B % self.num_subnetworks == 0, "batch dimension must be divisible by num_subnetworks"
 
         # [B, C, H, W] -> [B // S, S, C, H, W]
         if not repeat:
-            return x.view(B // self.nr_subnetworks, self.nr_subnetworks, C, H, W)
+            return x.view(B // self.num_subnetworks, self.num_subnetworks, C, H, W)
         else:
             x = x[:, None, :, :, :]
-            return x.repeat(1, self.nr_subnetworks, 1, 1, 1)
+            return x.repeat(1, self.num_subnetworks, 1, 1, 1)
 
     def _reshape_for_plotting(self, x: torch.Tensor):
         """
@@ -120,8 +120,8 @@ class MimoUnetModel(pl.LightningModule):
         """
         B, S, C_in, H, W = x.shape
 
-        assert S == self.nr_subnetworks, "channel dimension must match nr_subnetworks"
-        assert C_in == self.nr_input_channels, "channel dimension must match input_channels"
+        assert S == self.num_subnetworks, "channel dimension must match num_subnetworks"
+        assert C_in == self.num_subnetworks, "channel dimension must match input_channels"
 
         # [B, S, 2*C_out, H, W]
         out = self.model(x)
@@ -192,7 +192,7 @@ class MimoUnetModel(pl.LightningModule):
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser):
         parser = parent_parser.add_argument_group(title="NDVIModel")
-        parser.add_argument("--nr_subnetworks", type=int, default=3)
+        parser.add_argument("--num_subnetworks", type=int, default=3)
         parser.add_argument("--nr_channels", type=int, default=1)
         parser.add_argument("--learning_rate", type=float, default=1e-3)
         parser.add_argument("--weight_decay", type=float, default=1e-4)
@@ -225,7 +225,7 @@ def main(args: Namespace):
     }
     logger.debug("additional_hparams: %s", additional_hparams)
     model = MimoUnetModel(
-        nr_subnetworks=args.nr_subnetworks,
+        num_subnetworks=args.num_subnetworks,
         nr_input_channels=network_input_channels,
         nr_output_channels=1,
         filter_base_count=args.filter_base_count,
