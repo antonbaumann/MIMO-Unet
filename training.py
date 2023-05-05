@@ -122,11 +122,9 @@ class MimoUnetModel(pl.LightningModule):
         # [B, S, 2*C_out, H, W]
         out = self.model(x)
 
-        print(out.shape)
-
         # [B, S, C_out, H, W]
-        p1 = out[:, :, :self.out_channels, ...]
-        p2 = out[:, :, self.out_channels:, ...]
+        p1 = out[:, :, :self.out_channels // 2, ...]
+        p2 = out[:, :, self.out_channels // 2:, ...]
 
         return p1, p2
 
@@ -137,8 +135,6 @@ class MimoUnetModel(pl.LightningModule):
         y = self._reshape_for_subnetwors(y)
 
         p1, p2 = self(x)
-
-        print(p1.shape, p2.shape)
 
         loss = self.loss_fn.forward(p1, p2, y)
         y_hat = self.loss_fn.mode(p1, p2)
