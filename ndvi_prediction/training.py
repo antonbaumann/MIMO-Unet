@@ -95,7 +95,26 @@ def get_argument_parser() -> ArgumentParser:
     parser.add_argument("--limit_train_batches", type=int, required=False, default=1.0)
     parser.add_argument("--limit_val_batches", type=int, required=False, default=1.0)
     parser.add_argument("--gpus", type=int, default=1, help="Number of GPUs to use for training.")
+    
     parser.add_argument("--batch_size", type=int, default=30)
+    parser.add_argument("--num_workers", type=int, default=30)
+    parser.add_argument("--patch_size", type=int, default=256)
+    parser.add_argument("--stride 249", type=int, default=249)
+
+    parser.add_argument(
+        "-t",
+        "--target",
+        action="append",
+        help="Specify the targets the model should predict.",
+    )
+
+    parser.add_argument(
+        "-i",
+        "--input",
+        action="append",
+        required=True,
+        help=f"Set the used model inputs.",
+    )
 
     return parser
 
