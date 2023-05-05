@@ -121,12 +121,10 @@ def get_argument_parser() -> ArgumentParser:
 
 def get_default_callbacks(validation: bool = True) -> List[pl.Callback]:
     callbacks = [
-        # VisualInspectionROIs(),
         InputMonitor(),
         OutputMonitor(),
         LogHparamsMetricCallback(),
         ModelCheckpoint(save_last=True),
-        # TelegramProgressBar(),
     ]
     if validation:
         callbacks_validation = [
