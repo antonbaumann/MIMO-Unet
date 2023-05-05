@@ -225,6 +225,7 @@ def main(args: Namespace):
         nr_subnetworks=args.nr_subnetworks,
         nr_input_channels=network_input_channels,
         nr_output_channels=1,
+        filter_base_count=args.filter_base_count,
         loss=args.loss,
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
