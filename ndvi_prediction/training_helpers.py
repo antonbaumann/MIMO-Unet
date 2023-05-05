@@ -130,7 +130,7 @@ class OutputMonitor(pl.Callback):
                 err_map=outputs["err_map"], log_name="val/{veg_index}_error", **kwargs
             )
             self._log_std_map(
-                std_map=outputs["std_map"], log_name="val/{veg_index}_std", **kwargs
+                std_map=outputs["aleatoric_std_map"], log_name="val/{veg_index}_std", **kwargs
             )
             if 'epistemic_std_map' in outputs:
                 self._log_std_map(
