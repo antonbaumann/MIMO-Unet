@@ -4,7 +4,6 @@ import logging
 
 import pytorch_lightning as pl
 from models.mimo_unet import MimoUnetModel
-
 from ndvi_prediction.training import get_datamodule, get_default_callbacks, get_argument_parser
 
 logger = logging.getLogger(__name__)
