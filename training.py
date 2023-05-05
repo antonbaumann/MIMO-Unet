@@ -226,8 +226,8 @@ def main(args: Namespace):
     logger.debug("additional_hparams: %s", additional_hparams)
     model = MimoUnetModel(
         num_subnetworks=args.num_subnetworks,
-        num_input_channels=network_input_channels,
-        num_output_channels=1,
+        in_channels=network_input_channels,
+        out_channels=1,
         filter_base_count=args.filter_base_count,
         loss=args.loss,
         learning_rate=args.learning_rate,
