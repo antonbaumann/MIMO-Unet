@@ -58,10 +58,10 @@ class MimoUnetModel(pl.LightningModule):
             x: [B // S, S, C, H, W]
         """
         B, C, H, W = x.shape
-        assert B % self.num_subnetworks == 0, "batch dimension must be divisible by num_subnetworks"
-
+        
         # [B, C, H, W] -> [B // S, S, C, H, W]
         if not repeat:
+            assert B % self.num_subnetworks == 0, "batch dimension must be divisible by num_subnetworks"
             return x.view(B // self.num_subnetworks, self.num_subnetworks, C, H, W)
         else:
             x = x[:, None, :, :, :]
