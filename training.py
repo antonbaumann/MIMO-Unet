@@ -214,7 +214,6 @@ def main(args: Namespace):
         "max_epochs": epochs,
         "model_inputs": str(dm.model_inputs),
         "normalization": "min_max",
-        "dataset_size": len(dm),
         "dataset_path": args.dataset_dir,
         "batch_size": args.batch_size,
     }
