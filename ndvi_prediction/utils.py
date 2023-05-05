@@ -48,38 +48,3 @@ def clip_extremes(arr: np.ndarray, percentile: int = 1) -> np.ndarray:
     arr_clipped = np.clip(arr, a_min=low_percentile, a_max=high_percentile)
     assert not np.isnan(arr_clipped).any(), "Data should not contain NaN!"
     return arr_clipped
-
-
-def normalized_difference(arr1: np.ndarray, arr2: np.ndarray) -> np.ndarray:
-    # avoid signed integer overflow
-    if np.issubdtype(arr1.dtype, np.integer):
-        arr1 = arr1.astype(np.int32)
-    if np.issubdtype(arr2.dtype, np.integer):
-        arr2 = arr2.astype(np.int32)
-
-    diff = np.subtract(arr1, arr2)
-    summ = np.add(arr1, arr2)
-    ndiff = np.divide(diff, summ)
-    assert ndiff.shape == arr1.shape == arr2.shape
-
-    error_msg = ""
-    error_msg += (
-        "Division by zero. Normalized difference cannot be calculated."
-        if np.any(np.isnan(ndiff))
-        else ""
-    )
-    error_msg += (
-        "Error in normalized difference range!"
-        if ndiff.min() <= (-1 - epsilon) or ndiff.max() >= (1 + epsilon)
-        else ""
-    )
-    if error_msg:
-        print(
-            f"ndiff.dtype={ndiff.dtype}, arr1.dtype={arr1.dtype}, arr2.dtype={arr2.dtype}"
-        )
-        print(
-            f"a1.min={arr1.min()}, a1.max={arr1.max()}, a2.min={arr2.min()}, a2.max={arr2.max()}"
-        )
-        print(f"ndvi: min={ndiff.min()} max={ndiff.max()}")
-        raise ValueError(error_msg)
-    return ndiff

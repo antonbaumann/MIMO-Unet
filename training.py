@@ -5,7 +5,7 @@ import logging
 import pytorch_lightning as pl
 import torch
 from losses import UncertaintyLoss
-from models.mimo_unet import MimoUNet
+from mimo_unet.model import MimoUNet
 from ndvi_prediction.training import get_datamodule, get_default_callbacks, get_argument_parser, get_metrics_dict
 
 logger = logging.getLogger(__name__)
@@ -15,10 +15,14 @@ logger.setLevel(logging.DEBUG)
 class MimoUnetModel(pl.LightningModule):
     def __init__(
             self,
-            nr_subnetworks: int,
-            nr_input_channels: int,
-            nr_output_channels: int,
+            in_channels: int,
+            out_channels: int,
+            num_subnetworks: int,
+            bilinear: bool,
             filter_base_count: int,
+            center_dropout_rate: float,
+            final_dropout_rate: float,
+            use_pooling_indices: bool,
             loss: str,
             weight_decay: float,
             learning_rate: float,
@@ -26,28 +30,34 @@ class MimoUnetModel(pl.LightningModule):
         ):
         super().__init__()
 
-        self.nr_subnetworks = nr_subnetworks
-        self.nr_input_channels = nr_input_channels
-        self.nr_output_channels = nr_output_channels
+        # model parameters
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.num_subnetworks = num_subnetworks
+        self.bilinear = bilinear
         self.filter_base_count = filter_base_count
+        self.center_dropout_rate = center_dropout_rate
+        self.final_dropout_rate = final_dropout_rate
+        self.use_pooling_indices = use_pooling_indices
+
+        # training parameters
         self.loss_fn = UncertaintyLoss.from_name(loss)
         self.weight_decay = weight_decay
         self.learning_rate = learning_rate
         self.seed = seed
+
         self.ndvi_kwargs = {"vmin": 0, "vmax": 1, "cmap": "RdYlBu"}
 
-        self.model = MimoUNet(
-            in_channels=nr_input_channels,
-            out_channels=nr_output_channels * 2,
-            num_subnetworks=nr_subnetworks,
-            bilinear=True,
+        self.model = MimoUNet( 
+            in_channels=in_channels,
+            out_channels=out_channels,
+            num_subnetworks=num_subnetworks,
             filter_base_count=filter_base_count,
+            center_dropout_rate=center_dropout_rate,
+            final_dropout_rate=final_dropout_rate,
+            bilinear=bilinear,
+            use_pooling_indices=use_pooling_indices,
         )
-
-        metrics = ["MAE", "R2"]
-        for mode in ["train", "val"]:
-            for k, m in get_metrics_dict(mode=mode, metrics=metrics).items():
-                setattr(self, "metric_" + k, m)
 
         self.save_hyperparameters()
         self.save_hyperparameters({"loss_name": loss})
@@ -113,15 +123,8 @@ class MimoUnetModel(pl.LightningModule):
         assert S == self.nr_subnetworks, "channel dimension must match nr_subnetworks"
         assert C_in == self.nr_input_channels, "channel dimension must match input_channels"
 
-        # reshape input tensor to match MIMO architecture
-        # [B, S, C, H, W] -> [B, S*C, H, W]
-        # x = x.view(B, self.nr_subnetworks * self.nr_input_channels, H, W)
-
-        # [B, 2*S*C_out, H, W]
+        # [B, S, 2*C_out, H, W]
         out = self.model(x)
-
-        # [B, 2*S*C_out, H, W] -> [B, S, 2*C_out, H, W]
-        # out = out.view(B, self.nr_subnetworks, 2 * self.nr_output_channels, H, W)
 
         # [B, S, C_out, H, W]
         p1 = out[:, :, :self.nr_output_channels, ...]
