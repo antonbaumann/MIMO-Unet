@@ -5,7 +5,7 @@ import logging
 import pytorch_lightning as pl
 import torch
 from losses import UncertaintyLoss
-from models.mimo_unet import UNet
+from models.mimo_unet import MimoUNet
 from ndvi_prediction.training import get_datamodule, get_default_callbacks, get_argument_parser, get_metrics_dict
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ class MimoUnetModel(pl.LightningModule):
         self.seed = seed
         self.ndvi_kwargs = {"vmin": 0, "vmax": 1, "cmap": "RdYlBu"}
 
-        self.model = UNet(
+        self.model = MimoUNet(
             in_channels=nr_input_channels,
             out_channels=nr_output_channels * 2,
             num_subnetworks=nr_subnetworks,
@@ -240,7 +240,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     parser = get_argument_parser()
     parser = MimoUnetModel.add_model_specific_args(parser)
-    parser = UNet.add_model_specific_args(parser)
+    parser = MimoUNet.add_model_specific_args(parser)
     args = parser.parse_args()
     logger.debug("command line arguments: %s", args)
     main(args)  

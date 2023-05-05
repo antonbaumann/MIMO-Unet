@@ -12,13 +12,17 @@ import torchmetrics
 
 from ndvi_prediction.training_helpers import InputMonitor, OutputMonitor, LogHparamsMetricCallback
 
-import sen12tp
-import sen12tp.constants
-import sen12tp.dataset
-import sen12tp.utils
-import sen12tp.zarr_dataset
-import sen12tp.tif_dataset
+# import sen12tp
+# import sen12tp.constants
+# import sen12tp.dataset
+# import sen12tp.utils
+# import sen12tp.zarr_dataset
+# import sen12tp.tif_dataset
+# from sen12tp.dataset import Patchsize
+
+from sen12tp.datamodule import SEN12TPDataModule
 from sen12tp.dataset import Patchsize
+import sen12tp.utils
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -45,29 +49,21 @@ def get_metrics_dict(mode: str = "train", vegetation_index: str = "", metrics: O
     return metrics_dict
 
 
-def get_datamodule(args_dict: dict) -> sen12tp.dataset.BaseDataModule:
+def get_datamodule(args_dict: dict) -> SEN12TPDataModule:
     args_dict = args_dict.copy()
 
-    if args_dict["data_module"] == "tif":
-        #args_dict["patch_size"] = 256
-        patchsize = Patchsize(args_dict["patch_size"], args_dict["patch_size"])
-        if "patch_size" in args_dict:
-            del args_dict["patch_size"]  # to avoid a duplicate kwarg 'patch_size'
-        dm = sen12tp.tif_dataset.Sen12TpDataModule(
-            patch_size=patchsize,
-            model_inputs=args_dict["input"],
-            model_targets=args_dict["target"],
-            transform=sen12tp.utils.min_max_transform,
-            **args_dict,
-        )
-    elif args_dict["data_module"] == "zarr":
-        dm = sen12tp.zarr_dataset.ZarrDataModule(
-            model_input=args_dict["input"],
-            model_taret=args_dict["target"],
-            **args_dict
-        )
-    else:
-        raise ValueError("specified data_module not available!", args_dict["data_module"])
+    patchsize = Patchsize(args_dict["patch_size"], args_dict["patch_size"])
+    if "patch_size" in args_dict:
+        del args_dict["patch_size"]  # to avoid a duplicate kwarg 'patch_size'
+    dm = SEN12TPDataModule(
+        patch_size=patchsize,
+        model_inputs=args_dict["input"],
+        model_targets=args_dict["target"],
+        transform=sen12tp.utils.min_max_transform,
+        shuffle_train=True,
+        drop_last_train=True,
+        **args_dict,
+    )
     dm.setup()
     return dm
 
@@ -99,7 +95,7 @@ def get_argument_parser() -> ArgumentParser:
     parser.add_argument("--limit_train_batches", type=int, required=False, default=1.0)
     parser.add_argument("--limit_val_batches", type=int, required=False, default=1.0)
     parser.add_argument("--gpus", type=int, default=1, help="Number of GPUs to use for training.")
-    parser = sen12tp.dataset.BaseDataModule.add_model_specific_args(parser)
+    parser.add_argument("--batch_size", type=int, default=30)
 
     return parser
 

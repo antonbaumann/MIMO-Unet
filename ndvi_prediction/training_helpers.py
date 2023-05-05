@@ -1,13 +1,9 @@
 import torch
 import logging
-from typing import Optional
 import torchvision
 import pytorch_lightning as pl
 
 import visualization
-import rasterio
-from pathlib import Path
-import sen12tp.dataset
 import numpy as np
 from config import VALIDATION_INSPECTION_DIR
 
@@ -182,60 +178,3 @@ class LogHparamsMetricCallback(pl.Callback):
             trainer.logger.experiment.add_scalar(
                 "hp_metric", pl_module.best_val_r2, global_step=trainer.global_step
             )
-
-
-class VisualInspectionROIs(pl.Callback):
-    """For each epoch, create tif files of selected ROIs for visual inspection.
-    The ROIs are: 256, 998, 1494, 1708
-    """
-    def __init__(self):
-        self.inspection_ds_dir = VALIDATION_INSPECTION_DIR
-        self.inspection_ds: Optional[sen12tp.dataset.SEN12TP] = None
-
-    def on_validation_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
-        assert "model" in dir(pl_module), "attribute 'model' is missing from lightning module!"
-        if self.inspection_ds is None:
-            # create inspection dataset
-            orig_dataset = trainer.val_dataloaders[0].dataset.ds  # access the sen12tp dataset class
-            assert isinstance(orig_dataset, sen12tp.dataset.SEN12TP), f"dataset not instance of SEN12TP, but {type(orig_dataset)}, {orig_dataset}"
-            self.inspection_ds = sen12tp.dataset.SEN12TP(path=self.inspection_ds_dir,
-                                                         patch_size=sen12tp.dataset.Patchsize(2000, 2000),
-                                                         transform=orig_dataset.transform,
-                                                         used_bands=orig_dataset.used_bands,
-                                                         clip_transform=orig_dataset.clip_transform,
-                                                         end_transform=orig_dataset.end_transform)
-        pl_module.model.eval()
-        epoch_log_dir = Path(trainer.log_dir) / f"epoch-{pl_module.current_epoch}"
-        epoch_log_dir.mkdir(exist_ok=True)
-
-        for i, sample in enumerate(self.inspection_ds):
-            # get the roi number from the filename of the current patch
-            roi_tif = self.inspection_ds.patches[i][0]["s2"]
-            roi = roi_tif.name.split("_")[0]
-
-            img = sample["image"]
-            transform = rasterio.transform.Affine(**sample["transform_parameters"])
-            img = img[None, ...]  # add batch element axis
-            img = torch.tensor(img).to(pl_module.device)
-            pred = pl_module(img)
-            pred = pred.detach().cpu().numpy().astype(np.float32)
-            pred = pred[0, ...]  # select the first and only batch
-
-            veg_indices = getattr(pl_module, "target", ["NDVI"])
-            veg_indices = [v.lower() for v in veg_indices]
-            assert len(veg_indices) == pred.shape[0], f"Mismatch of veg index count and array shape: {len(veg_indices)} != {pred.shape[0]}"
-
-            for idx, veg_index in enumerate(veg_indices):
-                sample_path = epoch_log_dir / f"epoch-{pl_module.current_epoch}_{veg_index}_roi-{roi}.tif"
-                pred_veg_index = (pred[idx] - 0.5 ) * 2  # normalize from [0, 1] to [-1, 1]
-                with rasterio.open(sample_path,
-                                            'w',
-                                            driver = 'GTiff',
-                                            height = pred_veg_index.shape[0],
-                                            width = pred_veg_index.shape[1],
-                                            count=1,
-                                            dtype=pred_veg_index.dtype,
-                                            crs=sample["crs"],
-                                            transform=transform) as dst:
-                    dst.write(pred_veg_index, 1)
-                logger.info("Wrote inspection tif to %s", sample_path)
