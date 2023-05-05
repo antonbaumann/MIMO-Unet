@@ -158,8 +158,6 @@ class MimoUnetModel(pl.LightningModule):
 
         p1, p2 = self(x)
 
-        print(p1.shape, p2.shape)
-
         val_loss = self.loss_fn.forward(p1, p2, y)
         y_hat = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2)
@@ -174,13 +172,6 @@ class MimoUnetModel(pl.LightningModule):
             "std_map": self._reshape_for_plotting(aleatoric_std), 
             "err_map": self._reshape_for_plotting(y_hat - y),
         }
-    
-    def predict_step(self, batch, batch_idx, dataloader_idx):
-        x = batch["image"]
-        p1, p2 = self(x)
-        y_hat = self.loss_fn.mode(p1, p2)
-        aleatoric_std = self.loss_fn.std(p1, p2)
-        return y_hat, aleatoric_std
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
