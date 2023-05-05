@@ -213,7 +213,7 @@ def main(args: Namespace):
         in_channels=len(dm.model_inputs),
         out_channels=len(dm.model_targets),
         num_subnetworks=args.num_subnetworks,
-        filter_base_count=len(dm.model_targets),
+        filter_base_count=args.filter_base_count,
         center_dropout_rate=args.center_dropout_rate,
         final_dropout_rate=args.final_dropout_rate,
         loss=args.loss,
