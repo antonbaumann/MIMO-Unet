@@ -136,6 +136,8 @@ class MimoUnetModel(pl.LightningModule):
 
         p1, p2 = self(x)
 
+        print(p1.shape, p2.shape)
+
         loss = self.loss_fn.forward(p1, p2, y)
         y_hat = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2)
@@ -156,9 +158,9 @@ class MimoUnetModel(pl.LightningModule):
         x = self._reshape_for_subnetwors(x, repeat=True)
         y = self._reshape_for_subnetwors(y, repeat=True)
 
-        print(x.shape, y.shape)
-
         p1, p2 = self(x)
+
+        print(p1.shape, p2.shape)
 
         val_loss = self.loss_fn.forward(p1, p2, y)
         y_hat = self.loss_fn.mode(p1, p2)
