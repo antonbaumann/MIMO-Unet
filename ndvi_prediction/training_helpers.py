@@ -3,9 +3,8 @@ import logging
 import torchvision
 import pytorch_lightning as pl
 
-import visualization
+from .visualization import colorize
 import numpy as np
-from config import VALIDATION_INSPECTION_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ class OutputMonitor(pl.Callback):
             # img_data shape: Batch x indexes x M x N
             index_data = img_data[:, idx, ...][:, np.newaxis, ...]
             index_grid = torchvision.utils.make_grid(index_data)
-            img_color = visualization.colorize(index_grid, vmin=vmin, vmax=vmax, cmap=cmap)
+            img_color = colorize(index_grid, vmin=vmin, vmax=vmax, cmap=cmap)
             index_log_name = log_name.format(veg_index=veg_index)
             logger.experiment.add_image(
                 index_log_name, img_color, dataformats="HWC", global_step=global_step
