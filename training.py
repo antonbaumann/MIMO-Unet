@@ -122,6 +122,8 @@ class MimoUnetModel(pl.LightningModule):
         # [B, S, 2*C_out, H, W]
         out = self.model(x)
 
+        print(out.shape)
+
         # [B, S, C_out, H, W]
         p1 = out[:, :, :self.out_channels, ...]
         p2 = out[:, :, self.out_channels:, ...]
