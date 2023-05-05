@@ -116,8 +116,8 @@ class MimoUnetModel(pl.LightningModule):
         """
         B, S, C_in, H, W = x.shape
 
-        assert S == self.num_subnetworks, "channel dimension must match num_subnetworks"
-        assert C_in == self.num_subnetworks, "channel dimension must match input_channels"
+        assert S == self.num_subnetworks, "subnetwork dimension must match num_subnetworks"
+        assert C_in == self.in_channels, "channel dimension must match in_channels"
 
         # [B, S, 2*C_out, H, W]
         out = self.model(x)
