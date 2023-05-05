@@ -140,7 +140,6 @@ class MimoUnetModel(pl.LightningModule):
         if self.num_subnetworks == 1:
             epistemic_std = torch.zeros_like(aleatoric_std)
         else:
-            print('grüß gott')
             epistemic_std = (torch.sum((y_hat - y_hat_mean) ** 2, dim=1) * (1 / (self.num_subnetworks - 1))) ** 0.5
 
         self.log("val_loss", val_loss.mean(), batch_size=self.trainer.datamodule.batch_size)
