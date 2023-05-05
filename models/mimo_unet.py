@@ -161,7 +161,7 @@ class MimoUnetModel(pl.LightningModule):
             "preds": y_hat_mean, 
             "aleatoric_std_map": aleatoric_std, 
             "epistemic_std_map": epistemic_std,
-            "err_map": y_hat_mean - y,
+            "err_map": y_hat_mean - y.mean(dim=1),
         }
 
     def configure_optimizers(self):
