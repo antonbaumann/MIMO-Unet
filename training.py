@@ -123,8 +123,8 @@ class MimoUnetModel(pl.LightningModule):
         out = self.model(x)
 
         # [B, S, C_out, H, W]
-        p1 = out[:, :, :self.nr_output_channels, ...]
-        p2 = out[:, :, self.nr_output_channels:, ...]
+        p1 = out[:, :, :self.out_channels, ...]
+        p2 = out[:, :, self.out_channels:, ...]
 
         return p1, p2
 
