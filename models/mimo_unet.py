@@ -137,7 +137,11 @@ class MimoUnetModel(pl.LightningModule):
         aleatoric_std = self.loss_fn.std(p1, p2).mean(dim=1)
         
         y_hat_mean = y_hat.mean(dim=1, keepdim=True)
-        epistemic_std = ((torch.sum(y_hat - y_hat_mean, dim=1) ** 2) * (1 / (self.num_subnetworks - 1))) ** 0.5
+
+        if self.num_subnetworks == 1:
+            epistemic_std = torch.zeros_like(aleatoric_std)
+        else:
+            epistemic_std = ((torch.sum(y_hat - y_hat_mean, dim=1) ** 2) * (1 / (self.num_subnetworks - 1))) ** 0.5
         
         y_hat_mean = y_hat_mean.squeeze(dim=1)
 
