@@ -18,11 +18,9 @@ class MimoUnetModel(pl.LightningModule):
             in_channels: int,
             out_channels: int,
             num_subnetworks: int,
-            bilinear: bool,
             filter_base_count: int,
             center_dropout_rate: float,
             final_dropout_rate: float,
-            use_pooling_indices: bool,
             loss: str,
             weight_decay: float,
             learning_rate: float,
@@ -34,11 +32,9 @@ class MimoUnetModel(pl.LightningModule):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.num_subnetworks = num_subnetworks
-        self.bilinear = bilinear
         self.filter_base_count = filter_base_count
         self.center_dropout_rate = center_dropout_rate
         self.final_dropout_rate = final_dropout_rate
-        self.use_pooling_indices = use_pooling_indices
 
         # training parameters
         self.loss_fn = UncertaintyLoss.from_name(loss)
@@ -55,8 +51,8 @@ class MimoUnetModel(pl.LightningModule):
             filter_base_count=filter_base_count,
             center_dropout_rate=center_dropout_rate,
             final_dropout_rate=final_dropout_rate,
-            bilinear=bilinear,
-            use_pooling_indices=use_pooling_indices,
+            bilinear=True,
+            use_pooling_indices=True,
         )
 
         self.save_hyperparameters()
@@ -193,11 +189,13 @@ class MimoUnetModel(pl.LightningModule):
     def add_model_specific_args(parent_parser: ArgumentParser):
         parser = parent_parser.add_argument_group(title="NDVIModel")
         parser.add_argument("--num_subnetworks", type=int, default=3)
-        parser.add_argument("--nr_channels", type=int, default=1)
-        parser.add_argument("--learning_rate", type=float, default=1e-3)
-        parser.add_argument("--weight_decay", type=float, default=1e-4)
+        parser.add_argument("--filter_base_count", type=int, default=32)
+        parser.add_argument("--center_dropout_rate", type=float, default=0)
+        parser.add_argument("--final_dropout_rate", type=float, default=0)
+
         parser.add_argument("--loss", type=str, default="laplace_nll")
-        parser.add_argument("--seed", type=int, default=42)
+        parser.add_argument("--learning_rate", type=float, default=1e-3)
+        parser.add_argument("--weight_decay", type=float, default=0)
         return parent_parser
 
 
@@ -207,37 +205,25 @@ def main(args: Namespace):
 
     dm = get_datamodule(args_dict)
 
-    epochs = args.max_epochs
-    network_input_channels = len(dm.model_inputs)
-    kwargs = {
-        "gpus": 1,
-        "max_epochs": epochs,
-        "default_root_dir": args.checkpoint_path,
-        "log_every_n_steps": 100,
-    }
-    additional_hparams = {
-        "patch_size": str(dm.patch_size),
-        "max_epochs": epochs,
-        "model_inputs": str(dm.model_inputs),
-        "normalization": "min_max",
-        "dataset_path": args.dataset_dir,
-        "batch_size": args.batch_size,
-    }
-    logger.debug("additional_hparams: %s", additional_hparams)
     model = MimoUnetModel(
         num_subnetworks=args.num_subnetworks,
-        in_channels=network_input_channels,
-        out_channels=1,
-        filter_base_count=args.filter_base_count,
+        in_channels=len(dm.model_inputs),
+        out_channels=len(dm.model_targets),
+        filter_base_count=len(dm.model_targets),
         loss=args.loss,
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
         seed=args.seed,
     )
 
-    callbacks = get_default_callbacks()
-    trainer= pl.Trainer.from_argparse_args(args, callbacks=callbacks, **kwargs)
-    print("Trainer:", trainer)
+    trainer = pl.Trainer.from_argparse_args(
+        args, 
+        callbacks=get_default_callbacks(), 
+        gpus=1,
+        max_epochs=args.max_epochs,
+        default_root_dir=args.checkpoint_path,
+        log_every_n_steps=100,
+    )
     trainer.started_at = str(datetime.now().isoformat(timespec="seconds"))
     trainer.fit(model, dm)
 
@@ -245,8 +231,8 @@ def main(args: Namespace):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     parser = get_argument_parser()
+    parser.add_argument("--seed", type=int, required=True)
     parser = MimoUnetModel.add_model_specific_args(parser)
-    parser = MimoUNet.add_model_specific_args(parser)
     args = parser.parse_args()
     logger.debug("command line arguments: %s", args)
     main(args)  

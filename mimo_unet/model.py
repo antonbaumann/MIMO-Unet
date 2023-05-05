@@ -148,35 +148,3 @@ class MimoUNet(nn.Module):
             x_i = self.final_dropouts[i](x_i)
             logits.append(self.outcs[i](x_i).unsqueeze(dim=1))
         return torch.stack(logits, axis=1)
-
-    @staticmethod
-    def add_model_specific_args(parent_parser):
-        parser = parent_parser.add_argument_group("UNet")
-        parser.add_argument("--no_unet_bilinear", dest="bilinear", action="store_false")
-        parser.add_argument("--unet_bilinear", dest="bilinear", action="store_true")
-
-        parser.add_argument(
-            "--center_dropout_rate",
-            type=float,
-            help="Set dropout at the center of the UNet",
-            default=0.0,
-        )
-        parser.add_argument(
-            "--final_dropout_rate",
-            type=float,
-            help="Set dropout before the last conv layer UNet",
-            default=0.0,
-        )
-        parser.add_argument(
-            "--filter_base_count",
-            type=int,
-            help="Set the base number of filters.",
-            default=64,
-        )
-        parser.add_argument(
-            "--use_pooling_indices",
-            default=False,
-            help="Whether to use the pooling index at unpooling or not.",
-            action="store_true",
-        )
-        return parent_parser
