@@ -52,7 +52,7 @@ class MimoUnetModel(pl.LightningModule):
             center_dropout_rate=center_dropout_rate,
             final_dropout_rate=final_dropout_rate,
             bilinear=True,
-            use_pooling_indices=True,
+            use_pooling_indices=False,
         )
 
         self.save_hyperparameters()
