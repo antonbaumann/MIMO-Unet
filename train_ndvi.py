@@ -34,7 +34,7 @@ def main(args: Namespace):
         callbacks=get_default_callbacks(), 
         accelerator='gpu', 
         devices=1,
-        precision='16',
+        precision=32,
         max_epochs=args.max_epochs,
         default_root_dir=args.checkpoint_path,
         log_every_n_steps=100,

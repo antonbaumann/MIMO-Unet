@@ -58,7 +58,7 @@ class MimoUnetModel(pl.LightningModule):
             x: [B // S, S, C, H, W]
         """
         B, C, H, W = x.shape
-        
+
         # [B, C, H, W] -> [B // S, S, C, H, W]
         if not repeat:
             assert B % self.num_subnetworks == 0, "batch dimension must be divisible by num_subnetworks"
@@ -140,7 +140,8 @@ class MimoUnetModel(pl.LightningModule):
         if self.num_subnetworks == 1:
             epistemic_std = torch.zeros_like(aleatoric_std)
         else:
-            epistemic_std = ((torch.sum(y_hat - y_hat_mean, dim=1) ** 2) * (1 / (self.num_subnetworks - 1))) ** 0.5
+            print('grüß gott')
+            epistemic_std = (torch.sum((y_hat - y_hat_mean) ** 2, dim=1) * (1 / (self.num_subnetworks - 1))) ** 0.5
 
         self.log("val_loss", val_loss.mean(), batch_size=self.trainer.datamodule.batch_size)
         for subnetwork_idx in range(val_loss.shape[0]):
