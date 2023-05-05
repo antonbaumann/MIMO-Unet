@@ -36,8 +36,6 @@ class MimoUnetModel(pl.LightningModule):
         self.learning_rate = learning_rate
         self.seed = seed
 
-        self.ndvi_kwargs = {"vmin": 0, "vmax": 1, "cmap": "RdYlBu"}
-
         self.model = MimoUNet( 
             in_channels=in_channels,
             out_channels=out_channels,
