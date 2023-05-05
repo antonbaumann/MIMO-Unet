@@ -206,13 +206,15 @@ def main(args: Namespace):
     dm = get_datamodule(args_dict)
 
     model = MimoUnetModel(
-        num_subnetworks=args.num_subnetworks,
         in_channels=len(dm.model_inputs),
         out_channels=len(dm.model_targets),
+        num_subnetworks=args.num_subnetworks,
         filter_base_count=len(dm.model_targets),
+        center_dropout_rate=args.center_dropout_rate,
+        final_dropout_rate=args.final_dropout_rate,
         loss=args.loss,
-        learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
+        learning_rate=args.learning_rate,
         seed=args.seed,
     )
 
