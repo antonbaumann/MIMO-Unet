@@ -37,6 +37,7 @@ class GaussianNLL(UncertaintyLoss):
         y_hat: torch.tensor, 
         log_variance: torch.tensor, 
         y: torch.tensor,
+        reduce_mean: bool = True,
     ):
         """Negative log-likelihood for a Gaussian distribution.
         Adding weight decay yields the negative log posterior.
@@ -54,7 +55,12 @@ class GaussianNLL(UncertaintyLoss):
 
         diff = y_hat - y
         diff[diff.isnan()] = 0.0
-        return torch.mean(log_variance + diff ** 2 / torch.exp(log_variance))
+        
+        loss = log_variance + diff ** 2 / torch.exp(log_variance)
+        if reduce_mean:
+            return torch.mean(loss)
+        return loss
+
 
     def std(
         self, 
@@ -81,6 +87,7 @@ class LaplaceNLL(UncertaintyLoss):
         y_hat: torch.tensor, 
         log_scale: torch.tensor, 
         y: torch.tensor,
+        reduce_mean: bool = True,
     ):
         """Negative log-likelihood for a Laplace distribution.
         Adding weight decay yields the negative log posterior.
@@ -97,7 +104,10 @@ class LaplaceNLL(UncertaintyLoss):
         log_scale = torch.max(log_scale, self.min_log_scale)
 
         diff = y_hat - y
-        return torch.mean(log_scale + diff.abs() / torch.exp(log_scale))
+        loss = log_scale + diff.abs() / torch.exp(log_scale)
+        if reduce_mean:
+            return torch.mean(loss)
+        return loss
 
     def std(self, mu, log_scale):
         return torch.exp(log_scale) * (2 ** 0.5)

@@ -108,7 +108,7 @@ class MimoUnetModel(pl.LightningModule):
 
         p1, p2 = self(x)
 
-        loss = self.loss_fn.forward(p1, p2, y)
+        loss = self.loss_fn.forward(p1, p2, y, reduce_mean=True)
         y_hat = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2)
 
@@ -129,17 +129,28 @@ class MimoUnetModel(pl.LightningModule):
 
         p1, p2 = self(x)
 
-        val_loss = self.loss_fn.forward(p1, p2, y)
-        y_hat = self.loss_fn.mode(p1, p2)
-        aleatoric_std = self.loss_fn.std(p1, p2)
+        # [S, ]
+        val_loss = self.loss_fn.forward(p1, p2, y, reduce_mean=False).mean(dim=(0, 2, 3, 4))
 
-        self.log("val_loss", val_loss, batch_size=self.trainer.datamodule.batch_size)
+        # [B, S, 1, H, W]
+        y_hat = self.loss_fn.mode(p1, p2)
+        aleatoric_std = self.loss_fn.std(p1, p2).mean(dim=1)
+        
+        y_hat_mean = y_hat.mean(dim=1, keepdim=True)
+        epistemic_std = ((torch.sum(y_hat - y_hat_mean, dim=1) ** 2) * (1 / (self.num_subnetworks - 1))) ** 0.5
+        
+        y_hat_mean = y_hat_mean.squeeze(dim=1)
+
+        self.log("val_loss", val_loss.mean(), batch_size=self.trainer.datamodule.batch_size)
+        for subnetwork_idx in range(val_loss.shape[0]):
+            self.log(f"val_loss_{subnetwork_idx}", val_loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
 
         return {
             "loss": val_loss, 
-            "preds": self._reshape_for_plotting(y_hat), 
-            "std_map": self._reshape_for_plotting(aleatoric_std), 
-            "err_map": self._reshape_for_plotting(y_hat - y),
+            "preds": y_hat_mean, 
+            "aleatoric_std_map": aleatoric_std, 
+            "epistemic_std_map": epistemic_std,
+            "err_map": y_hat_mean - y,
         }
 
     def configure_optimizers(self):
