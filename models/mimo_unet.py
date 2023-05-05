@@ -150,13 +150,14 @@ class MimoUnetModel(pl.LightningModule):
         
         y_hat_mean = y_hat_mean.squeeze(dim=1)
         print('y_hat_mean', y_hat_mean.shape)
+        print('y', y.shape)
 
         self.log("val_loss", val_loss.mean(), batch_size=self.trainer.datamodule.batch_size)
         for subnetwork_idx in range(val_loss.shape[0]):
             self.log(f"val_loss_{subnetwork_idx}", val_loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
 
         return {
-            "loss": val_loss, 
+            "loss": val_loss.mean(), 
             "preds": y_hat_mean, 
             "aleatoric_std_map": aleatoric_std, 
             "epistemic_std_map": epistemic_std,
