@@ -146,5 +146,5 @@ class MimoUNet(nn.Module):
         for i in range(S):
             x_i = self.up4s[i](x, x1s[i], ind2s[i])
             x_i = self.final_dropouts[i](x_i)
-            logits.append(self.outcs[i](x_i).unsqueeze(dim=1))
+            logits.append(self.outcs[i](x_i))
         return torch.stack(logits, axis=1)
