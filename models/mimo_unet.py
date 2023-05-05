@@ -80,26 +80,6 @@ class MimoUnetModel(pl.LightningModule):
         # [B // S, S, C, H, W] -> [B, C, H, W]
         return x.view(B_ * S, C, H, W)
 
-    # def _log_metrics(self, y_hat, y, mode: str, batch_idx: int) -> None:
-    #     if mode != "val" and (batch_idx + 1) % self.trainer.log_every_n_steps == 0:
-    #         return
-
-    #     # global metrics
-    #     metric_filter = lambda attr: attr.startswith("metric_") and attr.count("/") == 1 and mode in attr
-    #     metric_name_list = filter(metric_filter, dir(self))
-
-    #     for metric_name in metric_name_list:
-    #         metric = getattr(self, metric_name)
-    #         metric(y_hat.detach().flatten(), y.detach().flatten())
-    #         self.log(
-    #             metric_name,
-    #             metric,
-    #             on_step=True,
-    #             on_epoch=True,
-    #             metric_attribute=metric_name,
-    #             batch_size=self.trainer.datamodule.batch_size,
-    #         )
-
     def forward(self, x: torch.Tensor):
         """
         Args:
@@ -135,7 +115,6 @@ class MimoUnetModel(pl.LightningModule):
         aleatoric_std = self.loss_fn.std(p1, p2)
 
         self.log("train_loss", loss, batch_size=self.trainer.datamodule.batch_size)
-        # self._log_metrics(y=y, y_hat=y_hat, mode="train", batch_idx=batch_idx)
 
         return {
             "loss": loss,
@@ -157,8 +136,6 @@ class MimoUnetModel(pl.LightningModule):
         aleatoric_std = self.loss_fn.std(p1, p2)
 
         self.log("val_loss", val_loss, batch_size=self.trainer.datamodule.batch_size)
-
-        # self._log_metrics(y=y, y_hat=y_hat, mode="val", batch_idx=batch_idx)
 
         return {
             "loss": val_loss, 
