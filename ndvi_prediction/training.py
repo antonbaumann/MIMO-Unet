@@ -136,7 +136,7 @@ def get_default_callbacks(validation: bool = True) -> List[pl.Callback]:
                 filename="epoch-{epoch}-step-{step}-valloss-{val_loss:.8f}-mae-{metric_val/mae_epoch:.8f}",
                 auto_insert_metric_name=False,
             ),
-            EarlyStopping(monitor="metric_val/mae_epoch", patience=10, mode="min", min_delta=0.00025),
+            # EarlyStopping(monitor="metric_val/mae_epoch", patience=10, mode="min", min_delta=0.00025),
         ]
         callbacks += callbacks_validation
     return callbacks
