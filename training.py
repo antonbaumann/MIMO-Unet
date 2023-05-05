@@ -18,6 +18,7 @@ class MimoUnetModel(pl.LightningModule):
             nr_subnetworks: int,
             nr_input_channels: int,
             nr_output_channels: int,
+            filter_base_count: int,
             loss: str,
             weight_decay: float,
             learning_rate: float,
@@ -28,6 +29,7 @@ class MimoUnetModel(pl.LightningModule):
         self.nr_subnetworks = nr_subnetworks
         self.nr_input_channels = nr_input_channels
         self.nr_output_channels = nr_output_channels
+        self.filter_base_count = filter_base_count
         self.loss_fn = UncertaintyLoss.from_name(loss)
         self.weight_decay = weight_decay
         self.learning_rate = learning_rate
@@ -39,6 +41,7 @@ class MimoUnetModel(pl.LightningModule):
             out_channels=nr_output_channels * 2,
             num_subnetworks=nr_subnetworks,
             bilinear=True,
+            filter_base_count=filter_base_count,
         )
 
         metrics = ["MAE", "R2"]
