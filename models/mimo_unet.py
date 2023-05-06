@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 import torch
 
 from losses import UncertaintyLoss
+from metrics import compute_regression_metrics
 from mimo_unet.model import MimoUNet
 
 class MimoUnetModel(pl.LightningModule):
@@ -113,6 +114,17 @@ class MimoUnetModel(pl.LightningModule):
         aleatoric_std = self.loss_fn.std(p1, p2)
 
         self.log("train_loss", loss, batch_size=self.trainer.datamodule.batch_size)
+        metric_dict = compute_regression_metrics(y_hat, y)
+
+        for name, value in metric_dict.items():
+            self.log(
+                f"train/{name}",
+                value,
+                on_step=True,
+                on_epoch=True,
+                metric_attribute=name,
+                batch_size=self.trainer.datamodule.batch_size,
+            )
 
         return {
             "loss": loss,
@@ -145,6 +157,17 @@ class MimoUnetModel(pl.LightningModule):
         self.log("val_loss", val_loss.mean(), batch_size=self.trainer.datamodule.batch_size)
         for subnetwork_idx in range(val_loss.shape[0]):
             self.log(f"val_loss_{subnetwork_idx}", val_loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
+
+        metric_dict = compute_regression_metrics(y_hat, y)
+        for name, value in metric_dict.items():
+            self.log(
+                f"train/{name}",
+                value,
+                on_step=True,
+                on_epoch=True,
+                metric_attribute=name,
+                batch_size=self.trainer.datamodule.batch_size,
+            )
 
         return {
             "loss": val_loss.mean(), 

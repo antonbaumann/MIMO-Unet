@@ -43,9 +43,6 @@ def get_metrics_dict(mode: str = "train", vegetation_index: str = "", metrics: O
         metrics_dict[f"{mode}/{vegetation_index}{seperator}ssim"] = torchmetrics.StructuralSimilarityIndexMeasure()
     if "MultiscaleSSIM" in metrics:
         metrics_dict[f"{mode}/{vegetation_index}{seperator}multiscalessim"] = torchmetrics.MultiScaleStructuralSimilarityIndexMeasure()
-    if mode == "val":
-        pass
-       # metrics_dict[f"{mode}/{vegetation_index}{seperator}pearson_corr"] = torchmetrics.PearsonCorrcoef()
     return metrics_dict
 
 
@@ -134,7 +131,6 @@ def get_default_callbacks(validation: bool = True) -> List[pl.Callback]:
                 filename="epoch-{epoch}-step-{step}-valloss-{val_loss:.8f}-mae-{metric_val/mae_epoch:.8f}",
                 auto_insert_metric_name=False,
             ),
-            # EarlyStopping(monitor="metric_val/mae_epoch", patience=10, mode="min", min_delta=0.00025),
         ]
         callbacks += callbacks_validation
     return callbacks

@@ -21,10 +21,11 @@ class MimoUNet(nn.Module):
         use_pooling_indices: bool = False,
     ):
         logger.info(
-            "Creating UNet with arguments: n_channels=%d, n_classes=%d, bilinear=%s, filter_base_count=%d, "
+            "Creating UNet with arguments: in_channels=%d, out_channels=%d, num_subnetworks=%d, bilinear=%s, filter_base_count=%d, "
             "center_dropout_rate=%f, final_dropout_rate=%f, use_pooling_indices=%s",
             in_channels,
             out_channels,
+            num_subnetworks,
             bilinear,
             filter_base_count,
             center_dropout_rate,
