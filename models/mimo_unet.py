@@ -192,7 +192,7 @@ class MimoUnetModel(pl.LightningModule):
     
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser):
-        parser = parent_parser.add_argument_group(title="NDVIModel")
+        parser = parent_parser.add_argument_group(title="MIMO UNet Model")
         
         parser.add_argument("--num_subnetworks", type=int, default=3)
         parser.add_argument("--filter_base_count", type=int, default=32)

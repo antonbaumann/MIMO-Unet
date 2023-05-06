@@ -51,7 +51,7 @@ def main(args: Namespace):
         learning_rate=args.learning_rate,
         seed=args.seed,
     )
-
+    
     trainer = pl.Trainer(
         callbacks=default_callbacks(), 
         accelerator='gpu', 
