@@ -10,10 +10,6 @@ def get_metric(metric: str):
         return torchmetrics.functional.mean_squared_error
     elif metric == "r2":
         return torchmetrics.functional.r2_score
-    elif metric == "ssim":
-        return torchmetrics.functional.structural_similarity_index_measure
-    elif metric == "multiscalessim":
-        return torchmetrics.functional.multiscale_structural_similarity_index_measure
     elif metric == "mape":
         return torchmetrics.functional.mean_absolute_percentage_error
     else:
@@ -23,7 +19,7 @@ def get_metric(metric: str):
 def compute_regression_metrics(
     y_hat: torch.Tensor, 
     y: torch.Tensor, 
-    metrics: Optional[List[str]] = ['r2', 'mae', 'mse', 'ssim', 'mape'],
+    metrics: Optional[List[str]] = ['r2', 'mae', 'mse', 'mape'],
 ) -> Dict[str, float]:
     y = y.detach()
     y_hat = y_hat.detach()
