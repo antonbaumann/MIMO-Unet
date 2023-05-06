@@ -5,7 +5,7 @@ import torch
 
 from losses import UncertaintyLoss
 from metrics import compute_regression_metrics
-from mimo_unet.model import MimoUNet
+from .mimo_components.model import MimoUNet
 
 class MimoUnetModel(pl.LightningModule):
     def __init__(
