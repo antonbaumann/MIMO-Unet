@@ -121,7 +121,7 @@ class MimoUnetModel(pl.LightningModule):
 
         for name, value in metric_dict.items():
             self.log(
-                f"train/{name}",
+                f"metric_train/{name}",
                 value,
                 on_step=True,
                 on_epoch=True,
@@ -168,7 +168,7 @@ class MimoUnetModel(pl.LightningModule):
         )
         for name, value in metric_dict.items():
             self.log(
-                f"valid/{name}",
+                f"metric_val/{name}",
                 value,
                 on_step=True,
                 on_epoch=True,
