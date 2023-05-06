@@ -163,8 +163,8 @@ class MimoUnetModel(pl.LightningModule):
             self.log(f"val_loss_{subnetwork_idx}", val_loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
 
         metric_dict = compute_regression_metrics(
-            y_hat_mean.squeeze(dim=1), 
-            y_mean,
+            y_hat_mean.flatten(), 
+            y_mean.flatten(),
         )
         for name, value in metric_dict.items():
             self.log(
