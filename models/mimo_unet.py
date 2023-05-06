@@ -114,10 +114,9 @@ class MimoUnetModel(pl.LightningModule):
         aleatoric_std = self.loss_fn.std(p1, p2)
 
         self.log("train_loss", loss, batch_size=self.trainer.datamodule.batch_size)
-        print(self._reshape_for_plotting(y_hat).shape)
         metric_dict = compute_regression_metrics(
-            self._reshape_for_plotting(y_hat), 
-            self._reshape_for_plotting(y),
+            y_hat.flatten(), 
+            y.flatten(),
         )
 
         for name, value in metric_dict.items():
