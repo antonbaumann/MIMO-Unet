@@ -9,7 +9,7 @@ def get_metric(metric: str):
     elif metric == "mse":
         return torchmetrics.functional.mean_squared_error
     elif metric == "r2":
-        return torchmetrics.functional.r2score
+        return torchmetrics.functional.r2_score
     elif metric == "ssim":
         return torchmetrics.functional.structural_similarity_index_measure
     elif metric == "multiscalessim":
