@@ -25,8 +25,8 @@ def compute_regression_metrics(
     y: torch.Tensor, 
     metrics: Optional[List[str]] = ['r2', 'mae', 'mse', 'ssim', 'mape'],
 ) -> Dict[str, float]:
-    y_flat = y.detach().flatten()
-    y_hat_flat = y_hat.detach().flatten()
+    y_flat = y.detach()
+    y_hat_flat = y_hat.detach()
 
     metric_dict = dict()
     for metric in metrics:

@@ -114,7 +114,10 @@ class MimoUnetModel(pl.LightningModule):
         aleatoric_std = self.loss_fn.std(p1, p2)
 
         self.log("train_loss", loss, batch_size=self.trainer.datamodule.batch_size)
-        metric_dict = compute_regression_metrics(y_hat, y)
+        metric_dict = compute_regression_metrics(
+            self._reshape_for_plotting(y_hat), 
+            self._reshape_for_plotting(y),
+        )
 
         for name, value in metric_dict.items():
             self.log(
@@ -148,6 +151,7 @@ class MimoUnetModel(pl.LightningModule):
         y_hat = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2).mean(dim=1)
         y_hat_mean = y_hat.mean(dim=1, keepdim=True)
+        y_mean = y.mean(dim=1)
 
         if self.num_subnetworks == 1:
             epistemic_std = torch.zeros_like(aleatoric_std)
@@ -158,7 +162,7 @@ class MimoUnetModel(pl.LightningModule):
         for subnetwork_idx in range(val_loss.shape[0]):
             self.log(f"val_loss_{subnetwork_idx}", val_loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
 
-        metric_dict = compute_regression_metrics(y_hat, y)
+        metric_dict = compute_regression_metrics(y_hat_mean, y_mean)
         for name, value in metric_dict.items():
             self.log(
                 f"valid/{name}",
@@ -174,7 +178,7 @@ class MimoUnetModel(pl.LightningModule):
             "preds": y_hat_mean.squeeze(dim=1), 
             "aleatoric_std_map": aleatoric_std, 
             "epistemic_std_map": epistemic_std,
-            "err_map": y_hat_mean.squeeze(dim=1) - y.mean(dim=1),
+            "err_map": y_hat_mean.squeeze(dim=1) - y_mean,
         }
 
     def configure_optimizers(self):
