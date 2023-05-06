@@ -115,8 +115,8 @@ class MimoUnetModel(pl.LightningModule):
 
         self.log("train_loss", loss, batch_size=self.trainer.datamodule.batch_size)
         metric_dict = compute_regression_metrics(
-            self._reshape_for_plotting(y_hat), 
-            self._reshape_for_plotting(y),
+            self._reshape_for_plotting(y_hat).squeeze(dim=1), 
+            self._reshape_for_plotting(y).squeeze(dim=1),
         )
 
         for name, value in metric_dict.items():
