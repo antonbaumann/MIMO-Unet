@@ -164,20 +164,3 @@ class InputMonitor(pl.Callback):
             logger.experiment.add_histogram(
                 "val/target", batch["label"], global_step=trainer.global_step
             )
-
-
-class LogHparamsMetricCallback(pl.Callback):
-    """Log the hp_metric value."""
-
-    def __init__(self, hp_metric_name: str = "val/r2"):
-        self.hp_metric_name = hp_metric_name
-
-    def on_validation_end(self, trainer, pl_module):
-        if "best_val_r2" in dir (pl_module):
-            val_r2_value = trainer.logged_metrics[self.hp_metric_name]
-            pl_module.best_val_r2 = torch.max(
-                val_r2_value, pl_module.best_val_r2.to(val_r2_value.device)
-            )
-            trainer.logger.experiment.add_scalar(
-                "hp_metric", pl_module.best_val_r2, global_step=trainer.global_step
-            )

@@ -29,24 +29,3 @@ def compute_regression_metrics(
         metric_dict[metric] = get_metric(metric)(y_hat, y)
 
     return metric_dict  
-
-
-def _log_metrics(self, y_hat, y, mode: str, batch_idx: int) -> None:
-        if mode != "val" and (batch_idx + 1) % self.trainer.log_every_n_steps == 0:
-            return
-
-        # global metrics
-        metric_filter = lambda attr: attr.startswith("metric_") and attr.count("/") == 1 and mode in attr
-        metric_name_list = filter(metric_filter, dir(self))
-
-        for metric_name in metric_name_list:
-            metric = getattr(self, metric_name)
-            metric(y_hat.detach().flatten(), y.detach().flatten())
-            self.log(
-                metric_name,
-                metric,
-                on_step=True,
-                on_epoch=True,
-                metric_attribute=metric_name,
-                batch_size=self.trainer.datamodule.batch_size,
-            )
