@@ -161,7 +161,7 @@ class MimoUnetModel(pl.LightningModule):
         metric_dict = compute_regression_metrics(y_hat, y)
         for name, value in metric_dict.items():
             self.log(
-                f"train/{name}",
+                f"valid/{name}",
                 value,
                 on_step=True,
                 on_epoch=True,
