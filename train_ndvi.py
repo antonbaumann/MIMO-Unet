@@ -18,7 +18,7 @@ logger.setLevel(logging.DEBUG)
 
 def default_callbacks(validation: bool = True) -> List[pl.Callback]:
     callbacks = [
-        InputMonitor(),
+        # InputMonitor(),
         OutputMonitor(),
         ModelCheckpoint(save_last=True),
     ]
