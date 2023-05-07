@@ -38,7 +38,7 @@ class OutputMonitor(pl.Callback):
 
             images = wandb.Image(img_color)
             index_log_name = log_name.format(veg_index=veg_index)
-            wandb.log({index_log_name, images}, step=global_step)
+            wandb.log({index_log_name: images}, step=global_step)
 
     def _log_image(
         self,
