@@ -56,6 +56,8 @@ def main(args: Namespace):
     )
 
     wandb_logger = WandbLogger(project="MIMO Sen12TP")
+    wandb_logger.watch(model, log="all", log_freq=500)
+    wandb_logger.experiment.config.update(vars(args))
 
     trainer = pl.Trainer(
         callbacks=default_callbacks(), 
@@ -67,7 +69,7 @@ def main(args: Namespace):
         log_every_n_steps=300,
         logger=wandb_logger,
     )
-    trainer.logger.experiment.config.update(vars(args))
+
     trainer.started_at = str(datetime.now().isoformat(timespec="seconds"))
     trainer.fit(model, dm)
 
