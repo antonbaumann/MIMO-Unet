@@ -30,6 +30,8 @@ def get_datamodule(args: Namespace) -> SEN12TPDataModule:
         drop_last_train=True,
     )
     dm.setup()
+    dm.sen12tp_train.end_index = int(args.training_set_percentage * dm.sen12tp_train.end_index)
+
     return dm
 
 
@@ -85,6 +87,13 @@ def get_argument_parser() -> ArgumentParser:
         type=int,
         default=32,
         help="Specify the number of workers.",
+    )
+
+    parser.add_argument(
+        "--training_set_percentage",
+        type=float,
+        default=1.0,
+        help="Specify the percentage of the training set to use.",
     )
 
     return parent_parser
