@@ -67,6 +67,7 @@ def main(args: Namespace):
         log_every_n_steps=300,
         logger=wandb_logger,
     )
+    trainer.logger.experiment.config.update(vars(args))
     trainer.started_at = str(datetime.now().isoformat(timespec="seconds"))
     trainer.fit(model, dm)
 

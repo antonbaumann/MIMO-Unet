@@ -54,7 +54,7 @@ class MimoUnetModel(pl.LightningModule):
         )
 
         self.save_hyperparameters()
-        self.save_hyperparameters({"loss_name": loss})
+        self.save_hyperparameters({"loss": loss})
 
 
     def _apply_input_transform(
