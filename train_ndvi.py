@@ -5,6 +5,7 @@ import logging
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
+from lightning.pytorch.loggers import WandbLogger
 
 from utils import dir_path
 from models.mimo_unet import MimoUnetModel
@@ -54,6 +55,8 @@ def main(args: Namespace):
         seed=args.seed,
     )
 
+    wandb_logger = WandbLogger(project="MIMO Sen12TP")
+
     trainer = pl.Trainer(
         callbacks=default_callbacks(), 
         accelerator='gpu', 
@@ -62,6 +65,7 @@ def main(args: Namespace):
         max_epochs=args.max_epochs,
         default_root_dir=args.checkpoint_path,
         log_every_n_steps=300,
+        logger=wandb_logger,
     )
     trainer.started_at = str(datetime.now().isoformat(timespec="seconds"))
     trainer.fit(model, dm)
