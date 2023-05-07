@@ -69,7 +69,7 @@ class MimoUnetModel(pl.LightningModule):
         """
         B, _, _, _ = x.shape
 
-        main_shuffle = torch.randperm(B).repeat(self.batch_repetitions)
+        main_shuffle = torch.randperm(B, device=x.device).repeat(self.batch_repetitions)
         to_shuffle = int(main_shuffle.shape[0] * (1. - self.input_repetition_probability))
 
         shuffle_indices = [
