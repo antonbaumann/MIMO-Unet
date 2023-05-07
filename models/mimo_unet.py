@@ -59,17 +59,19 @@ class MimoUnetModel(pl.LightningModule):
 
     def _apply_input_transform(
             self, 
-            x: torch.Tensor,
+            image: torch.Tensor,
+            label: torch.Tensor,
         ):
         """
         Args:
-            x: [B, C, H, W]
+            image: [B, C_image, H, W]
+            label: [B, C_label, H, W]
         Returns:
-            x: [B, S, C, H, W]
+            [B, S, C_image, H, W], [B, S, C_label, H, W]
         """
-        B, _, _, _ = x.shape
+        B, _, _, _ = image.shape
 
-        main_shuffle = torch.randperm(B, device=x.device).repeat(self.batch_repetitions)
+        main_shuffle = torch.randperm(B, device=image.device).repeat(self.batch_repetitions)
         to_shuffle = int(main_shuffle.shape[0] * (1. - self.input_repetition_probability))
 
         shuffle_indices = [
@@ -79,10 +81,15 @@ class MimoUnetModel(pl.LightningModule):
             ) for _ in range(self.num_subnetworks)
         ]
 
-        return torch.stack(
-            [torch.index_select(x, 0, indices) for indices in shuffle_indices], 
+        image_transformed = torch.stack(
+            [torch.index_select(image, 0, indices) for indices in shuffle_indices], 
             dim=1,
         )
+        label_transformed = torch.stack(
+            [torch.index_select(label, 0, indices) for indices in shuffle_indices],
+            dim=1,
+        )
+        return image_transformed, label_transformed
 
     def _reshape_for_subnetwors(self, x: torch.Tensor, repeat: bool = False):
         """
@@ -137,8 +144,7 @@ class MimoUnetModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         image, label = batch["image"], batch["label"]
         
-        image_transformed = self._apply_input_transform(image)
-        label_transformed = self._apply_input_transform(label)
+        image_transformed, label_transformed = self._apply_input_transform(image, label)
 
         p1, p2 = self(image_transformed)
 
