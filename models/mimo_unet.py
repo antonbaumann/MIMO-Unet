@@ -21,6 +21,8 @@ class MimoUnetModel(pl.LightningModule):
             weight_decay: float,
             learning_rate: float,
             seed: int,
+            input_repetition_probability: float = 0.0,
+            batch_repetitions: int = 1,
         ):
         super().__init__()
 
@@ -37,6 +39,8 @@ class MimoUnetModel(pl.LightningModule):
         self.weight_decay = weight_decay
         self.learning_rate = learning_rate
         self.seed = seed
+        self.input_repetition_probability = input_repetition_probability
+        self.batch_repetitions = batch_repetitions
 
         self.model = MimoUNet( 
             in_channels=self.in_channels,
@@ -51,6 +55,34 @@ class MimoUnetModel(pl.LightningModule):
 
         self.save_hyperparameters()
         self.save_hyperparameters({"loss_name": loss})
+
+
+    def _apply_input_transform(
+            self, 
+            x: torch.Tensor,
+        ):
+        """
+        Args:
+            x: [B, C, H, W]
+        Returns:
+            x: [B, S, C, H, W]
+        """
+        B, _, _, _ = x.shape
+
+        main_shuffle = torch.randperm(B).repeat(self.batch_repetitions)
+        to_shuffle = int(main_shuffle.shape[0] * (1. - self.input_repetition_probability))
+
+        shuffle_indices = [
+            torch.cat(
+                (main_shuffle[:to_shuffle].random_(to_shuffle), main_shuffle[to_shuffle:]), 
+                dim=0,
+            ) for _ in range(self.num_subnetworks)
+        ]
+
+        return torch.stack(
+            [torch.index_select(x, 0, indices) for indices in shuffle_indices], 
+            dim=1,
+        )
 
     def _reshape_for_subnetwors(self, x: torch.Tensor, repeat: bool = False):
         """
@@ -103,21 +135,21 @@ class MimoUnetModel(pl.LightningModule):
         return p1, p2
 
     def training_step(self, batch, batch_idx):
-        x, y = batch["image"], batch["label"]
+        image, label = batch["image"], batch["label"]
         
-        x = self._reshape_for_subnetwors(x)
-        y = self._reshape_for_subnetwors(y)
+        image_transformed = self._apply_input_transform(image)
+        label_transformed = self._apply_input_transform(label)
 
-        p1, p2 = self(x)
+        p1, p2 = self(image_transformed)
 
-        loss = self.loss_fn.forward(p1, p2, y, reduce_mean=True)
+        loss = self.loss_fn.forward(p1, p2, label_transformed, reduce_mean=True)
         y_hat = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2)
 
         self.log("train_loss", loss, batch_size=self.trainer.datamodule.batch_size)
         metric_dict = compute_regression_metrics(
             y_hat.flatten(), 
-            y.flatten(),
+            label_transformed.flatten(),
         )
 
         for name, value in metric_dict.items():
@@ -134,7 +166,7 @@ class MimoUnetModel(pl.LightningModule):
             "loss": loss,
             "preds": self._reshape_for_plotting(y_hat), 
             "aleatoric_std_map": self._reshape_for_plotting(aleatoric_std), 
-            "err_map": self._reshape_for_plotting(y_hat - y),
+            "err_map": self._reshape_for_plotting(y_hat - label_transformed),
         }
     
     def validation_step(self, batch, batch_idx):
