@@ -46,12 +46,14 @@ def main(args: Namespace):
         filter_base_count=args.filter_base_count,
         center_dropout_rate=args.center_dropout_rate,
         final_dropout_rate=args.final_dropout_rate,
+        input_repetition_probability=args.input_repetition_probability,
+        batch_repetitions=args.batch_repetitions,
         loss=args.loss,
         weight_decay=args.weight_decay,
         learning_rate=args.learning_rate,
         seed=args.seed,
     )
-    
+
     trainer = pl.Trainer(
         callbacks=default_callbacks(), 
         accelerator='gpu', 
