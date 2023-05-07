@@ -5,7 +5,7 @@ import logging
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
-from lightning.pytorch.loggers import WandbLogger
+from pytorch_lightning.pytorch.loggers import WandbLogger
 
 from utils import dir_path
 from models.mimo_unet import MimoUnetModel
