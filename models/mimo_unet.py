@@ -164,6 +164,7 @@ class MimoUnetModel(pl.LightningModule):
 
         return {
             "loss": loss,
+            "label": self._reshape_for_plotting(label_transformed),
             "preds": self._reshape_for_plotting(y_hat), 
             "aleatoric_std_map": self._reshape_for_plotting(aleatoric_std), 
             "err_map": self._reshape_for_plotting(y_hat - label_transformed),
@@ -211,6 +212,7 @@ class MimoUnetModel(pl.LightningModule):
 
         return {
             "loss": val_loss.mean(), 
+            "label": y_mean,
             "preds": y_hat_mean.squeeze(dim=1), 
             "aleatoric_std_map": aleatoric_std, 
             "epistemic_std_map": epistemic_std,
