@@ -91,9 +91,9 @@ class OutputMonitor(pl.Callback):
                 assert len(_outs) == 1
                 outputs = _outs[0]
 
-            trainer.logger.experiment.add_histogram(
-                "train/prediction", outputs["preds"], global_step=trainer.global_step
-            )
+            # trainer.logger.experiment.add_histogram(
+            #     "train/prediction", outputs["preds"], global_step=trainer.global_step
+            # )
             self._log_image(
                 img_data=outputs["preds"], log_name="train/{veg_index}_predicted", **kwargs
             )
@@ -117,9 +117,9 @@ class OutputMonitor(pl.Callback):
                 "pl_module": pl_module,
             }
 
-            trainer.logger.experiment.add_histogram(
-                "val/prediction", outputs["preds"], global_step=trainer.global_step
-            )
+            # trainer.logger.experiment.add_histogram(
+            #     "val/prediction", outputs["preds"], global_step=trainer.global_step
+            # )
             self._log_image(
                 img_data=outputs["preds"], log_name="val/{veg_index}_predicted", **kwargs
             )
