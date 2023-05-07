@@ -1,12 +1,10 @@
 import torch
-import logging
 import torchvision
 import pytorch_lightning as pl
+import wandb
 
 from .visualization import colorize
 import numpy as np
-
-logger = logging.getLogger(__name__)
 
 
 class OutputMonitor(pl.Callback):
@@ -37,10 +35,10 @@ class OutputMonitor(pl.Callback):
             index_data = img_data[:, idx, ...][:, np.newaxis, ...]
             index_grid = torchvision.utils.make_grid(index_data)
             img_color = colorize(index_grid, vmin=vmin, vmax=vmax, cmap=cmap)
+
+            images = wandb.Image(img_color)
             index_log_name = log_name.format(veg_index=veg_index)
-            logger.experiment.add_image(
-                index_log_name, img_color, dataformats="HWC", global_step=global_step
-            )
+            logger.log({index_log_name, images}, step=global_step)
 
     def _log_image(
         self,
