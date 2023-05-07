@@ -76,7 +76,7 @@ class MimoUnetModel(pl.LightningModule):
 
         shuffle_indices = [
             torch.cat(
-                (main_shuffle[:to_shuffle].clone()[torch.randperm(to_shuffle)], main_shuffle[to_shuffle:]), 
+                (main_shuffle[:to_shuffle][torch.randperm(to_shuffle)], main_shuffle[to_shuffle:]), 
                 dim=0,
             ) for _ in range(self.num_subnetworks)
         ]
