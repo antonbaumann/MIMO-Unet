@@ -98,7 +98,7 @@ class OutputMonitor(pl.Callback):
                 img_data=outputs["preds"], log_name="train/{veg_index}_predicted", **kwargs
             )
             self._log_image(
-                img_data=batch["label"], log_name="train/{veg_index}_true", **kwargs
+                img_data=outputs["label"], log_name="train/{veg_index}_true", **kwargs
             )
             self._log_error_map(
                 err_map=outputs["err_map"], log_name="train/{veg_index}_error", **kwargs
@@ -124,7 +124,7 @@ class OutputMonitor(pl.Callback):
                 img_data=outputs["preds"], log_name="val/{veg_index}_predicted", **kwargs
             )
             self._log_image(
-                img_data=batch["label"], log_name="val/{veg_index}_true", **kwargs
+                img_data=outputs["label"], log_name="val/{veg_index}_true", **kwargs
             )
             self._log_error_map(
                 err_map=outputs["err_map"], log_name="val/{veg_index}_error", **kwargs
