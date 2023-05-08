@@ -15,13 +15,11 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         num_workers: int,
         pin_memory: bool,
     ) -> None:
+        super().__init__()
         self.dataset_dir = dataset_dir
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.pin_memory = pin_memory
-
-    def prepare_data(self) -> None:
-        pass
 
     def collate_fn(self, batch):
         return dict(
