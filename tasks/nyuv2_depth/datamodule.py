@@ -21,11 +21,15 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.pin_memory = pin_memory
 
-    # def collate_fn(self, batch):
-    #     return dict(
-    #         image=torch.stack([item["image"] for item in batch]).transpose(1, 3),
-    #         label=torch.stack([item["label"] for item in batch]).transpose(1, 3),
-    #     )
+    def collate_fn(self, batch):
+        print(batch)
+        d = dict(
+            image=torch.stack([item["image"] for item in batch]).transpose(1, 3),
+            label=torch.stack([item["label"] for item in batch]).transpose(1, 3),
+        )
+
+        print(d['image'].shape)
+        return d
 
     def setup(
         self,
