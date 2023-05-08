@@ -1,3 +1,4 @@
+from typing import Optional
 import torch
 import torchvision
 import pytorch_lightning as pl
@@ -16,10 +17,10 @@ class OutputMonitor(pl.Callback):
         log_name: str, 
         global_step: int, 
         pl_module: pl.LightningModule, 
-        vmin: float,
-        vmax: float,
         cmap: str,
         logger,
+        vmin: Optional[float] = None,
+        vmax: Optional[float] = None,
         max_images: int = 32,
     ):
         """Get an batch of images and log them to the tensorboard log.
