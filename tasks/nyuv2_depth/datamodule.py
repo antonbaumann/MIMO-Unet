@@ -81,7 +81,7 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
             self.data_test,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
-            shuffle=False,
+            shuffle=True,
             drop_last=False,
             pin_memory=self.pin_memory,
         )
