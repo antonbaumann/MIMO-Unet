@@ -18,7 +18,7 @@ class NYUv2DepthDataset(Dataset):
         label = self.data['label'][index]
         return {
             'image': torch.tensor(image).permute(2, 0, 1).float(),
-            'label': torch.tensor(label).unsqueeze(0).float(),
+            'label': torch.tensor(label).permute(2, 0, 1).float(),
         }
 
     def __len__(self):
