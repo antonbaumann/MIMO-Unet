@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 import h5py
+import os
 
 from utils import dir_path
 
@@ -51,8 +52,8 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         self,
         stage: Optional[str] = None,
     ) -> None:
-        h5_train = h5py.File("/ws/data/nyuv2/depth_train.h5", "r")
-        h5_test = h5py.File("/ws/data/nyuv2/depth_test.h5", "r")
+        h5_train = h5py.File(os.path.join(self.dataset_dir, "depth_train.h5"), "r")
+        h5_test = h5py.File(os.path.join(self.dataset_dir, "depth_test.h5"), "r")
 
         self.data_train = NYUv2DepthDataset(dict(
             image=h5_train["image"],
