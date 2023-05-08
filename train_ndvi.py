@@ -9,8 +9,8 @@ from pytorch_lightning.loggers import WandbLogger
 
 from utils import dir_path
 from models.mimo_unet import MimoUnetModel
-from sen12tp.datamodule import get_datamodule, add_datamodule_args
-from sen12tp.callbacks import OutputMonitor
+from tasks.sen12tp.datamodule import get_datamodule, add_datamodule_args
+from tasks.sen12tp.callbacks import OutputMonitor
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
