@@ -10,12 +10,19 @@ from utils import dir_path
 
 
 class NYUv2DepthDataset(Dataset):
-    def __init__(self, data):
+    def __init__(self, data, normalize: bool = True):
+        super().__init__()
         self.data = data
+        self.normalize = normalize
 
     def __getitem__(self, index):
         image = self.data['image'][index]
         label = self.data['label'][index]
+
+        if self.normalize:
+            image = image / 255.0
+            label = label / 255.0
+
         return {
             'image': torch.tensor(image).permute(2, 0, 1).float(),
             'label': torch.tensor(label).permute(2, 0, 1).float(),
@@ -31,12 +38,14 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         batch_size: int,
         num_workers: int,
         pin_memory: bool,
+        normalize: bool = True,
     ) -> None:
         super().__init__()
         self.dataset_dir = dataset_dir
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.pin_memory = pin_memory
+        self.normalize = normalize
 
     def setup(
         self,
@@ -48,11 +57,13 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         self.data_train = NYUv2DepthDataset(dict(
             image=h5_train["image"],
             label=h5_train["depth"],
+            normalize=self.normalize,
         ))
 
         self.data_test = NYUv2DepthDataset(dict(
             image=h5_test["image"],
             label=h5_test["depth"],
+            normalize=self.normalize,
         ))
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
