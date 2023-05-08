@@ -1,6 +1,7 @@
 from typing import Optional
 from argparse import ArgumentParser, Namespace
 import pytorch_lightning as pl
+import numpy as np
 import torch
 import h5py
 
@@ -22,14 +23,10 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         self.pin_memory = pin_memory
 
     def collate_fn(self, batch):
-        print(batch)
-        d = dict(
-            image=torch.stack([item["image"] for item in batch]).transpose(1, 3),
-            label=torch.stack([item["label"] for item in batch]).transpose(1, 3),
-        )
+        images = torch.stack([torch.tensor(sample['image']).permute(2, 0, 1).float() for sample in batch])
+        depths = torch.stack([torch.tensor(sample['label']).unsqueeze(0).float() for sample in batch])
 
-        print(d['image'].shape)
-        return d
+        return {'image': images, 'label': depths}
 
     def setup(
         self,
