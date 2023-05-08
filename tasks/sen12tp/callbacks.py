@@ -20,6 +20,7 @@ class OutputMonitor(pl.Callback):
         vmax: float,
         cmap: str,
         logger,
+        max_images: int = 32,
     ):
         """Get an batch of images and log them to the tensorboard log.
 
@@ -32,7 +33,7 @@ class OutputMonitor(pl.Callback):
 
         for idx, veg_index in enumerate(veg_indices):
             # img_data shape: Batch x indexes x M x N
-            index_data = img_data[:, idx, ...][:, np.newaxis, ...]
+            index_data = img_data[:max_images, idx, ...][:, np.newaxis, ...]
             index_grid = torchvision.utils.make_grid(index_data)
             img_color = colorize(index_grid, vmin=vmin, vmax=vmax, cmap=cmap)
 
