@@ -179,8 +179,6 @@ class MimoUnetModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
 
-        print(x.shape, y.shape)
-
         x = self._reshape_for_subnetwors(x, repeat=True)
         y = self._reshape_for_subnetwors(y, repeat=True)
 
