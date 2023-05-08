@@ -13,10 +13,12 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         dataset_dir: str,
         batch_size: int,
         num_workers: int,
+        pin_memory: bool,
     ) -> None:
         self.dataset_dir = dataset_dir
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.pin_memory = pin_memory
 
     def collate_fn(self, batch):
         return dict(
@@ -48,6 +50,7 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
             shuffle=True,
             drop_last=True,
+            pin_memory=self.pin_memory,
             collate_fn=self.collate_fn,
         )
     
@@ -58,16 +61,18 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
             shuffle=False,
             drop_last=False,
+            pin_memory=self.pin_memory,
             collate_fn=self.collate_fn,
         )
     
-    def val_dataloader(self) -> torch.utils.data.DataLoader:
+    def test_dataloader(self) -> torch.utils.data.DataLoader:
         return torch.utils.data.DataLoader(
             self.data_test,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             shuffle=False,
             drop_last=False,
+            pin_memory=self.pin_memory,
             collate_fn=self.collate_fn,
         )
 
@@ -77,6 +82,7 @@ def get_datamodule(args: Namespace) -> NYUv2DepthDataModule:
         dataset_dir=args.dataset_dir,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
+        pin_memory=args.pin_memory,
     )
 
 def add_datamodule_args(parent_parser: ArgumentParser) -> ArgumentParser:
@@ -100,6 +106,13 @@ def add_datamodule_args(parent_parser: ArgumentParser) -> ArgumentParser:
         type=int,
         default=32,
         help="Specify the number of workers.",
+    )
+
+    parser.add_argument(
+        "--pin_memory",
+        type=bool,
+        default=True,
+        help="Specify whether to pin memory.",
     )
 
     return parent_parser
