@@ -10,6 +10,7 @@ from pytorch_lightning.loggers import WandbLogger
 from utils import dir_path
 from models.mimo_unet import MimoUnetModel
 from tasks.nyuv2_depth.datamodule import get_datamodule, add_datamodule_args
+from tasks.nyuv2_depth.callbacks import OutputMonitor
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -17,6 +18,7 @@ logger.setLevel(logging.DEBUG)
 
 def default_callbacks(validation: bool = True) -> List[pl.Callback]:
     callbacks = [
+        OutputMonitor(),
         ModelCheckpoint(save_last=True),
     ]
     if validation:
