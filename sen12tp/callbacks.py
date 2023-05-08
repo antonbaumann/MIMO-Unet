@@ -3,7 +3,7 @@ import torchvision
 import pytorch_lightning as pl
 import wandb
 
-from .visualization import colorize
+from visualization import colorize
 import numpy as np
 
 
@@ -115,9 +115,6 @@ class OutputMonitor(pl.Callback):
                 "pl_module": pl_module,
             }
 
-            # trainer.logger.experiment.add_histogram(
-            #     "val/prediction", outputs["preds"], global_step=trainer.global_step
-            # )
             self._log_image(
                 img_data=outputs["preds"], log_name="val/{veg_index}_predicted", **kwargs
             )
@@ -134,31 +131,3 @@ class OutputMonitor(pl.Callback):
                 self._log_std_map(
                     std_map=outputs["epistemic_std_map"], log_name="val/{veg_index}_epistemic_std", **kwargs
                 )
-
-
-class InputMonitor(pl.Callback):
-    """Logs the input (input and target label) of the model."""
-
-    def on_train_batch_start(
-        self, trainer, pl_module, batch, batch_idx
-    ):
-        if (batch_idx + 1) % trainer.log_every_n_steps == 0:
-            logger = trainer.logger
-            logger.experiment.add_histogram(
-                "train/input", batch["image"], global_step=trainer.global_step
-            )
-            logger.experiment.add_histogram(
-                "train/target", batch["label"], global_step=trainer.global_step
-            )
-
-    def on_validation_batch_start(
-        self, trainer, pl_module, batch, batch_idx, dataloader_idx
-    ):
-        if batch_idx % trainer.log_every_n_steps == 0:
-            logger = trainer.logger
-            logger.experiment.add_histogram(
-                "val/input", batch["image"], global_step=trainer.global_step
-            )
-            logger.experiment.add_histogram(
-                "val/target", batch["label"], global_step=trainer.global_step
-            )

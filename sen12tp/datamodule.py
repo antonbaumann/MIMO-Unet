@@ -35,8 +35,7 @@ def get_datamodule(args: Namespace) -> SEN12TPDataModule:
     return dm
 
 
-def get_argument_parser() -> ArgumentParser:
-    parent_parser = ArgumentParser()
+def add_datamodule_args(parent_parser: ArgumentParser) -> ArgumentParser:
     parser = parent_parser.add_argument_group(title="Sen12tpDataModule")
 
     parser.add_argument(

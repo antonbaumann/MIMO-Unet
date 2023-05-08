@@ -9,8 +9,7 @@ from pytorch_lightning.loggers import WandbLogger
 
 from utils import dir_path
 from models.mimo_unet import MimoUnetModel
-from sen12tp.datamodule import get_datamodule, add_datamodule_args
-from sen12tp.callbacks import OutputMonitor
+from nyuv2_depth.datamodule import get_datamodule, add_datamodule_args
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -18,7 +17,6 @@ logger.setLevel(logging.DEBUG)
 
 def default_callbacks(validation: bool = True) -> List[pl.Callback]:
     callbacks = [
-        OutputMonitor(),
         ModelCheckpoint(save_last=True),
     ]
     if validation:
@@ -54,7 +52,7 @@ def main(args: Namespace):
         seed=args.seed,
     )
 
-    wandb_logger = WandbLogger(project="MIMO Sen12TP")
+    wandb_logger = WandbLogger(project="MIMO NYUv2Depth")
     wandb_logger.watch(model, log="all", log_freq=500)
     wandb_logger.experiment.config.update(vars(args))
 
