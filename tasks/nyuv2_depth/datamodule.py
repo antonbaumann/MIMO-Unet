@@ -11,12 +11,22 @@ from utils import dir_path
 
 
 class NYUv2DepthDataset(Dataset):
-    def __init__(self, data, normalize: bool = True):
+    def __init__(
+            self, 
+            data, 
+            normalize: bool = True,
+            shuffle_on_load: bool = False,
+        ):
         super().__init__()
         self.data = data
         self.normalize = normalize
+        if shuffle_on_load:
+            self.shuffle_permutation = np.random.permutation(len(self.data['image']))
+        else:
+            self.shuffle_permutation = np.arange(len(self.data['image']))
 
     def __getitem__(self, index):
+        index = self.shuffle_permutation[index]
         image = self.data['image'][index]
         label = self.data['label'][index]
 
@@ -59,12 +69,14 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
             image=h5_train["image"],
             label=h5_train["depth"],
             normalize=self.normalize,
+            shuffle_on_load=True,
         ))
 
         self.data_test = NYUv2DepthDataset(dict(
             image=h5_test["image"],
             label=h5_test["depth"],
             normalize=self.normalize,
+            shuffle_on_load=True,
         ))
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
@@ -82,7 +94,7 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
             self.data_test,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
-            shuffle=True,
+            shuffle=False,
             drop_last=False,
             pin_memory=self.pin_memory,
         )
