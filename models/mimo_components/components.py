@@ -76,15 +76,32 @@ class Up(nn.Module):
         # if bilinear, use the normal convolutions to reduce the number of channels
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
-            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2, groups=groups, dropout_rate=dropout_rate)
+            self.conv = DoubleConv(
+                in_channels=in_channels, 
+                out_channels=out_channels, 
+                mid_channels=in_channels // 2, 
+                groups=groups, 
+                dropout_rate=dropout_rate,
+            )
         elif self.use_pooling_indices:
             self.up = nn.MaxUnpool2d(2, padding=0)
-            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2, groups=groups, dropout_rate=dropout_rate)
+            self.conv = DoubleConv(
+                in_channels=in_channels, 
+                out_channels=out_channels, 
+                mid_channels=in_channels // 2, 
+                groups=groups, 
+                dropout_rate=dropout_rate,
+            )
         else:
             self.up = nn.ConvTranspose2d(
                 in_channels, in_channels // 2, kernel_size=2, stride=2, groups=groups,
             )
-            self.conv = DoubleConv(in_channels, out_channels, groups=groups, dropout_rate=dropout_rate)
+            self.conv = DoubleConv(
+                in_channels=in_channels, 
+                out_channels=out_channels, 
+                groups=groups, 
+                dropout_rate=dropout_rate,
+            )
 
     def forward(self, x1, x2, pooling_indices: Optional = None):
         if self.use_pooling_indices:
