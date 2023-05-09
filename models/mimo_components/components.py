@@ -12,7 +12,7 @@ class DoubleConv(nn.Module):
             self, 
             in_channels: int, 
             out_channels: int, 
-            dropout_rate: Optional[float] = 0.0,
+            dropout_rate: float = 0.0,
             mid_channels: Optional[int] = None, 
             groups: Optional[int] = 1
         ):
@@ -62,10 +62,10 @@ class Up(nn.Module):
 
     def __init__(
             self, 
-            in_channels, 
-            out_channels,
-            dropout_rate=0.0,
-            bilinear=True, 
+            in_channels: int, 
+            out_channels: int,
+            dropout_rate: float = 0.0,
+            bilinear: bool = True, 
             use_pooling_indices: bool = False, 
             groups: int = 1,
         ):
