@@ -25,6 +25,8 @@ class NYUv2DepthDataset(Dataset):
         else:
             self.shuffle_permutation = np.arange(len(self.data['image']))
 
+        print(self.shuffle_permutation)
+
     def __getitem__(self, index):
         shuffled_index = self.shuffle_permutation[index]
         image = self.data['image'][shuffled_index]
