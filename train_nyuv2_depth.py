@@ -46,6 +46,7 @@ def main(args: Namespace):
         filter_base_count=args.filter_base_count,
         center_dropout_rate=args.center_dropout_rate,
         final_dropout_rate=args.final_dropout_rate,
+        overall_dropout_rate=args.overall_dropout_rate,
         input_repetition_probability=args.input_repetition_probability,
         batch_repetitions=args.batch_repetitions,
         loss=args.loss,
