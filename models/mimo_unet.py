@@ -201,13 +201,13 @@ class MimoUnetModel(pl.LightningModule):
         else:
             epistemic_std = (torch.sum((y_hat - y_hat_mean) ** 2, dim=1) * (1 / (self.num_subnetworks - 1))) ** 0.5
 
-        combined_std = (aleatoric_std ** 2 + epistemic_std ** 2) ** 0.5
-
         self.log("val_loss", val_loss.mean(), batch_size=self.trainer.datamodule.batch_size)
         for subnetwork_idx in range(val_loss.shape[0]):
             self.log(f"val_loss_{subnetwork_idx}", val_loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
 
-        val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), torch.log(combined_std), y_mean, reduce_mean=True)
+        combined_std = (aleatoric_std ** 2 + epistemic_std ** 2) ** 0.5
+        combined_log_scale = torch.log(combined_std / (2 ** 0.5))
+        val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), combined_log_scale, y_mean, reduce_mean=True)
         self.log("val_loss_combined", val_loss_combined, batch_size=self.trainer.datamodule.batch_size)
 
         metric_dict = compute_regression_metrics(
