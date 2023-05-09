@@ -8,7 +8,14 @@ import torch.nn.functional as F
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
 
-    def __init__(self, in_channels, out_channels, mid_channels=None, groups: int = 1):
+    def __init__(
+            self, 
+            in_channels: int, 
+            out_channels: int, 
+            dropout_rate: Optional[float] = 0.0,
+            mid_channels: Optional[int] = None, 
+            groups: Optional[int] = 1
+        ):
         super().__init__()
         if not mid_channels:
             mid_channels = out_channels
@@ -19,6 +26,7 @@ class DoubleConv(nn.Module):
             nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1, padding_mode="reflect", groups=groups),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
+            nn.Dropout2d(dropout_rate, inplace=True),
         )
 
     def forward(self, x):
@@ -28,11 +36,17 @@ class DoubleConv(nn.Module):
 class Down(nn.Module):
     """Downscaling with maxpool then double conv"""
 
-    def __init__(self, in_channels, out_channels, use_pooling_indices: bool = False):
+    def __init__(
+            self, 
+            in_channels, 
+            out_channels, 
+            dropout_rate: float = 0.0,
+            use_pooling_indices: bool = False,
+        ):
         super().__init__()
         self.use_pooling_indices = use_pooling_indices
         self.maxpool = nn.MaxPool2d(2, return_indices=self.use_pooling_indices)
-        self.conv = DoubleConv(in_channels, out_channels)
+        self.conv = DoubleConv(in_channels, out_channels, dropout_rate=dropout_rate)
 
     def forward(self, x) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         y = self.maxpool(x)
@@ -46,7 +60,15 @@ class Down(nn.Module):
 class Up(nn.Module):
     """Upscaling then double conv"""
 
-    def __init__(self, in_channels, out_channels, bilinear=True, use_pooling_indices: bool = False, groups: int = 1):
+    def __init__(
+            self, 
+            in_channels, 
+            out_channels,
+            dropout_rate=0.0,
+            bilinear=True, 
+            use_pooling_indices: bool = False, 
+            groups: int = 1,
+        ):
         super().__init__()
         assert int(bilinear) + int(use_pooling_indices) <= 1, "Do not specify use_pooling_indices and bilinear together!"
         self.use_pooling_indices = use_pooling_indices
@@ -54,15 +76,15 @@ class Up(nn.Module):
         # if bilinear, use the normal convolutions to reduce the number of channels
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
-            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2, groups=groups)
+            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2, groups=groups, dropout_rate=dropout_rate)
         elif self.use_pooling_indices:
             self.up = nn.MaxUnpool2d(2, padding=0)
-            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2, groups=groups)
+            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2, groups=groups, dropout_rate=dropout_rate)
         else:
             self.up = nn.ConvTranspose2d(
                 in_channels, in_channels // 2, kernel_size=2, stride=2, groups=groups,
             )
-            self.conv = DoubleConv(in_channels, out_channels, groups=groups)
+            self.conv = DoubleConv(in_channels, out_channels, groups=groups, dropout_rate=dropout_rate)
 
     def forward(self, x1, x2, pooling_indices: Optional = None):
         if self.use_pooling_indices:

@@ -17,18 +17,23 @@ class MimoUNet(nn.Module):
         filter_base_count: int = 30,
         center_dropout_rate: float = 0.0,
         final_dropout_rate: float = 0.0,
+        overall_dropout_rate: float = 0.0,
         bilinear: bool = True,
         use_pooling_indices: bool = False,
     ):
+        if overall_dropout_rate > 0.0 and (center_dropout_rate > 0.0 or final_dropout_rate > 0.0):
+            raise ValueError("Do not specify overall_dropout_rate together with center_dropout_rate or final_dropout_rate!")
+        
         logger.info(
             "Creating UNet with arguments: in_channels=%d, out_channels=%d, num_subnetworks=%d, bilinear=%s, filter_base_count=%d, "
-            "center_dropout_rate=%f, final_dropout_rate=%f, use_pooling_indices=%s",
+            "center_dropout_rate=%f, final_dropout_rate=%f, overall_dropout_rate=%f, use_pooling_indices=%s",
             in_channels,
             out_channels,
             num_subnetworks,
             bilinear,
             filter_base_count,
             center_dropout_rate,
+            overall_dropout_rate,
             final_dropout_rate,
             use_pooling_indices,
         )
@@ -36,7 +41,11 @@ class MimoUNet(nn.Module):
 
         self.in_convs = nn.ModuleList()
         for i in range(num_subnetworks):
-            self.in_convs.append(DoubleConv(in_channels, filter_base_count))
+            self.in_convs.append(DoubleConv(
+                in_channels=in_channels, 
+                out_channels=filter_base_count, 
+                dropout_rate=overall_dropout_rate,
+            ))
 
         self.down1s = nn.ModuleList()
         for i in range(num_subnetworks):
@@ -44,23 +53,27 @@ class MimoUNet(nn.Module):
                 in_channels=filter_base_count, 
                 out_channels=2 * filter_base_count, 
                 use_pooling_indices=use_pooling_indices,
+                dropout_rate=overall_dropout_rate,
             ))
 
         self.down2 = Down(
             in_channels=2 * filter_base_count * num_subnetworks, 
             out_channels=4 * filter_base_count * num_subnetworks,
             use_pooling_indices=use_pooling_indices,
+            dropout_rate=overall_dropout_rate,
         )
         self.down3 = Down(
             in_channels=4 * filter_base_count * num_subnetworks, 
             out_channels=8 * filter_base_count * num_subnetworks,
             use_pooling_indices=use_pooling_indices,
+            dropout_rate=overall_dropout_rate,
         )
         self.factor = 2 if (bilinear or use_pooling_indices) else 1
         self.down4 = Down(
             in_channels=8 * filter_base_count * num_subnetworks, 
             out_channels=16 * filter_base_count * num_subnetworks // self.factor, 
             use_pooling_indices=use_pooling_indices,
+            dropout_rate=overall_dropout_rate,
         )
         self.center_dropout = nn.Dropout(p=center_dropout_rate)
         self.up1 = Up(
@@ -68,18 +81,21 @@ class MimoUNet(nn.Module):
             out_channels=8 * filter_base_count * num_subnetworks // self.factor, 
             bilinear=bilinear, 
             use_pooling_indices=use_pooling_indices,
+            dropout_rate=overall_dropout_rate,
         )
         self.up2 = Up(
             in_channels=8 * filter_base_count * num_subnetworks, 
             out_channels=4 * filter_base_count * num_subnetworks // self.factor, 
             bilinear=bilinear, 
             use_pooling_indices=use_pooling_indices,
+            dropout_rate=overall_dropout_rate,
         )
         self.up3 = Up(
             in_channels=4 * filter_base_count * num_subnetworks, 
             out_channels=2 * filter_base_count * num_subnetworks // self.factor, 
             bilinear=bilinear, 
             use_pooling_indices=use_pooling_indices,
+            dropout_rate=overall_dropout_rate,
         )
 
         self.up4s = nn.ModuleList()
@@ -89,6 +105,7 @@ class MimoUNet(nn.Module):
                 out_channels=filter_base_count, 
                 bilinear=bilinear, 
                 use_pooling_indices=use_pooling_indices, 
+                dropout_rate=overall_dropout_rate,
             ))
 
         self.final_dropouts = nn.ModuleList()

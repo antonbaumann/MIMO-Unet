@@ -17,6 +17,7 @@ class MimoUnetModel(pl.LightningModule):
             filter_base_count: int,
             center_dropout_rate: float,
             final_dropout_rate: float,
+            overall_dropout_rate: float,
             loss: str,
             weight_decay: float,
             learning_rate: float,
@@ -33,6 +34,7 @@ class MimoUnetModel(pl.LightningModule):
         self.filter_base_count = filter_base_count
         self.center_dropout_rate = center_dropout_rate
         self.final_dropout_rate = final_dropout_rate
+        self.overall_dropout_rate = overall_dropout_rate
 
         # training parameters
         self.loss_fn = UncertaintyLoss.from_name(loss)
@@ -49,6 +51,7 @@ class MimoUnetModel(pl.LightningModule):
             filter_base_count=self.filter_base_count,
             center_dropout_rate=self.center_dropout_rate,
             final_dropout_rate=self.final_dropout_rate,
+            overall_dropout_rate=self.overall_dropout_rate,
             bilinear=True,
             use_pooling_indices=False,
         )
@@ -236,12 +239,13 @@ class MimoUnetModel(pl.LightningModule):
         
         parser.add_argument("--num_subnetworks", type=int, default=3)
         parser.add_argument("--filter_base_count", type=int, default=32)
-        parser.add_argument("--center_dropout_rate", type=float, default=0)
-        parser.add_argument("--final_dropout_rate", type=float, default=0)
+        parser.add_argument("--center_dropout_rate", type=float, default=0.0)
+        parser.add_argument("--final_dropout_rate", type=float, default=0.0)
+        parser.add_argument("--overall_dropout_rate", type=float, default=0.0)
 
         parser.add_argument("--input_repetition_probability", type=float, default=0.0)
         parser.add_argument("--batch_repetitions", type=int, default=1)
         parser.add_argument("--loss", type=str, default="laplace_nll")
         parser.add_argument("--learning_rate", type=float, default=1e-3)
-        parser.add_argument("--weight_decay", type=float, default=0)
+        parser.add_argument("--weight_decay", type=float, default=0.0)
         return parent_parser
