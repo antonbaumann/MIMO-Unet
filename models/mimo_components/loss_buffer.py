@@ -3,7 +3,6 @@ import torch
 class LossBuffer:
     def __init__(
             self, 
-            device: torch.device,
             buffer_size: int = 10, 
             subnetworks: int = 1
         ) -> None:
