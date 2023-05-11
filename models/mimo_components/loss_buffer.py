@@ -3,12 +3,13 @@ import torch
 class LossBuffer:
     def __init__(
             self, 
+            device: torch.device,
             buffer_size: int = 10, 
             subnetworks: int = 1
         ) -> None:
         self.i = 0
         self.buffer_size = buffer_size
-        self.buffer = torch.zeros(buffer_size, subnetworks)
+        self.buffer = torch.zeros(buffer_size, subnetworks, device=device)
 
     def add(self, loss: torch.Tensor) -> None:
         self.buffer[self.i] = loss

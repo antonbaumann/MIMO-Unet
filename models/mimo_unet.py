@@ -47,11 +47,6 @@ class MimoUnetModel(pl.LightningModule):
         self.batch_repetitions = batch_repetitions
         self.loss_buffer_size = loss_buffer_size
 
-        self.loss_buffer = LossBuffer(
-            buffer_size=self.loss_buffer_size,
-            subnetworks=self.num_subnetworks,
-        )
-
         self.model = MimoUNet( 
             in_channels=self.in_channels,
             out_channels=self.out_channels,
@@ -62,6 +57,12 @@ class MimoUnetModel(pl.LightningModule):
             overall_dropout_rate=self.overall_dropout_rate,
             bilinear=True,
             use_pooling_indices=False,
+        )
+
+        self.loss_buffer = LossBuffer(
+            buffer_size=self.loss_buffer_size,
+            subnetworks=self.num_subnetworks,
+            device=self.model.device,
         )
 
         self.save_hyperparameters()
