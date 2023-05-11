@@ -160,7 +160,7 @@ class MimoUnetModel(pl.LightningModule):
         p1, p2 = self(image_transformed)
 
         loss = self.loss_fn.forward(p1, p2, label_transformed, reduce_mean=False).mean(dim=(0, 2, 3, 4))
-        weights = self.loss_buffer.get_weights()
+        weights = self.loss_buffer.get_weights().to(loss.device)
         loss_weighted = loss * weights
 
         self.loss_buffer.add(loss)

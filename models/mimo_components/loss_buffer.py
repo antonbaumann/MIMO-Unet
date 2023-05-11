@@ -11,7 +11,6 @@ class LossBuffer:
         self.buffer = torch.zeros(buffer_size, subnetworks)
 
     def add(self, loss: torch.Tensor) -> None:
-        self.buffer = self.buffer.to(loss.device)
         self.buffer[self.i] = loss
         self.i = (self.i + 1) % self.buffer_size
     
