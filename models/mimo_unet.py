@@ -62,7 +62,7 @@ class MimoUnetModel(pl.LightningModule):
         self.loss_buffer = LossBuffer(
             buffer_size=self.loss_buffer_size,
             subnetworks=self.num_subnetworks,
-            device=self.model.device,
+            device=self.device,
         )
 
         self.save_hyperparameters()
