@@ -23,9 +23,10 @@ class MimoUnetModel(pl.LightningModule):
             weight_decay: float,
             learning_rate: float,
             seed: int,
+            loss_buffer_size: int,
+            loss_buffer_temperature: float,
             input_repetition_probability: float = 0.0,
             batch_repetitions: int = 1,
-            loss_buffer_size: int = 10,
         ):
         super().__init__()
 
@@ -46,6 +47,7 @@ class MimoUnetModel(pl.LightningModule):
         self.input_repetition_probability = input_repetition_probability
         self.batch_repetitions = batch_repetitions
         self.loss_buffer_size = loss_buffer_size
+        self.loss_buffer_temperature = loss_buffer_temperature
 
         self.model = MimoUNet( 
             in_channels=self.in_channels,
@@ -61,6 +63,7 @@ class MimoUnetModel(pl.LightningModule):
 
         self.loss_buffer = LossBuffer(
             buffer_size=self.loss_buffer_size,
+            temperature=self.loss_buffer_temperature,
             subnetworks=self.num_subnetworks,
         )
 
@@ -270,4 +273,6 @@ class MimoUnetModel(pl.LightningModule):
         parser.add_argument("--loss", type=str, default="laplace_nll")
         parser.add_argument("--learning_rate", type=float, default=1e-3)
         parser.add_argument("--weight_decay", type=float, default=0.0)
+        parser.add_argument("--loss_buffer_size", type=int, default=10)
+        parser.add_argument("--loss_buffer_temperature", type=float, default=1.0)
         return parent_parser

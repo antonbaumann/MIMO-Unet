@@ -3,8 +3,9 @@ import torch
 class LossBuffer:
     def __init__(
             self, 
-            buffer_size: int = 10, 
-            subnetworks: int = 1
+            subnetworks: int,
+            temperature: float,
+            buffer_size: int, 
         ) -> None:
         self.i = 0
         self.buffer_size = buffer_size
@@ -22,4 +23,3 @@ class LossBuffer:
         if mean.sum() == 0:
             return torch.ones_like(mean)
         return torch.nn.functional.softmax(mean) * len(mean)
-
