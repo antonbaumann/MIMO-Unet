@@ -163,7 +163,7 @@ class MimoUnetModel(pl.LightningModule):
         weights = self.loss_buffer.get_weights().to(loss.device)
         loss_weighted = loss * weights
 
-        self.loss_buffer.add(loss)
+        self.loss_buffer.add(loss.detach())
 
         y_hat = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2)
@@ -172,7 +172,6 @@ class MimoUnetModel(pl.LightningModule):
         for subnetwork_idx in range(loss.shape[0]):
             self.log(f"train_loss_{subnetwork_idx}", loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
             self.log(f"train_weight_{subnetwork_idx}", weights[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
-
 
         metric_dict = compute_regression_metrics(
             y_hat.flatten(), 
