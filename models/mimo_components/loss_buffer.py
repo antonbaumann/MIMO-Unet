@@ -21,5 +21,5 @@ class LossBuffer:
         mean = self.get_mean()
         if mean.sum() == 0:
             return torch.ones_like(mean)
-        return (1 - mean / torch.sum(mean)) * len(mean)
+        return torch.nn.functional.softmax(mean) * len(mean)
 
