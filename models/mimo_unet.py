@@ -6,6 +6,7 @@ import torch
 from losses import UncertaintyLoss
 from metrics import compute_regression_metrics
 from .mimo_components.model import MimoUNet
+from .mimo_components.loss_buffer import LossBuffer
 
 
 class MimoUnetModel(pl.LightningModule):
@@ -24,6 +25,7 @@ class MimoUnetModel(pl.LightningModule):
             seed: int,
             input_repetition_probability: float = 0.0,
             batch_repetitions: int = 1,
+            loss_buffer_size: int = 10,
         ):
         super().__init__()
 
@@ -43,6 +45,12 @@ class MimoUnetModel(pl.LightningModule):
         self.seed = seed
         self.input_repetition_probability = input_repetition_probability
         self.batch_repetitions = batch_repetitions
+        self.loss_buffer_size = loss_buffer_size
+
+        self.loss_buffer = LossBuffer(
+            buffer_size=self.loss_buffer_size,
+            subnetworks=self.num_subnetworks,
+        )
 
         self.model = MimoUNet( 
             in_channels=self.in_channels,
@@ -151,11 +159,21 @@ class MimoUnetModel(pl.LightningModule):
 
         p1, p2 = self(image_transformed)
 
-        loss = self.loss_fn.forward(p1, p2, label_transformed, reduce_mean=True)
+        loss = self.loss_fn.forward(p1, p2, label_transformed, reduce_mean=False).mean(dim=(0, 2, 3, 4))
+        weights = self.loss_buffer.get_weights()
+        loss_weighted = loss * weights
+
+        self.loss_buffer.add(loss)
+
         y_hat = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2)
 
-        self.log("train_loss", loss, batch_size=self.trainer.datamodule.batch_size)
+        self.log("train_loss", loss.mean(), batch_size=self.trainer.datamodule.batch_size)
+        for subnetwork_idx in range(loss.shape[0]):
+            self.log(f"train_loss_{subnetwork_idx}", loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
+            self.log(f"train_weight_{subnetwork_idx}", weights[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
+
+
         metric_dict = compute_regression_metrics(
             y_hat.flatten(), 
             label_transformed.flatten(),
@@ -172,7 +190,7 @@ class MimoUnetModel(pl.LightningModule):
             )
 
         return {
-            "loss": loss,
+            "loss": loss_weighted.mean(),
             "label": self._reshape_for_plotting(label_transformed),
             "preds": self._reshape_for_plotting(y_hat), 
             "aleatoric_std_map": self._reshape_for_plotting(aleatoric_std), 
@@ -225,7 +243,7 @@ class MimoUnetModel(pl.LightningModule):
             )
 
         return {
-            "loss": val_loss.mean(), 
+            "loss": val_loss.mean(),
             "label": y_mean,
             "preds": y_hat_mean.squeeze(dim=1), 
             "aleatoric_std_map": aleatoric_std, 
