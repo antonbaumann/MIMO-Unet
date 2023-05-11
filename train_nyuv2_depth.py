@@ -66,7 +66,7 @@ def main(args: Namespace):
         precision=32,
         max_epochs=args.max_epochs,
         default_root_dir=args.checkpoint_path,
-        log_every_n_steps=300,
+        log_every_n_steps=100,
         logger=wandb_logger,
     )
 
