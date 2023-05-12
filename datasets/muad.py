@@ -14,16 +14,11 @@ def load_img(path: str) -> np.array:
     data = iio.imread(path)
     return data
 
-def load_depth(path: str, to_meters: bool) -> np.array:
-    depth = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
-    depth = Image.fromarray(depth)
-    depth = np.asarray(depth, dtype=np.float32)
-    depth = 1 - depth
-
-    if to_meters:
-        depth = depth * 400
-
-    return depth
+def load_disparity(path: str) -> np.array:
+    disparity = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
+    disparity = Image.fromarray(disparity)
+    disparity = np.asarray(disparity, dtype=np.float32)
+    return disparity
 
 def resize_img(
         data: np.array, 
@@ -36,9 +31,11 @@ def resize_img(
     )
     return data
 
-def fix_depth_map(img, max_depth: float):
-    img[~np.isfinite(img)] = max_depth
-    return img
+def fix_depth_map(img):
+    img = img.copy()
+    mask = np.isfinite(img)
+    img[~mask] = 0
+    return img, mask
 
 def get_filename_id(file_name: str) -> int:
     return int(file_name.split('_')[0])
@@ -91,7 +88,7 @@ class MUADBaseDataset(Dataset):
 
         # fill missing pixels in depth map
         if label.dtype == np.float32:
-            label = fix_depth_map(label, max_depth=1 if self.normalize else 400)
+            label, mask = fix_depth_map(label)
 
         if self.normalize:
             image = image / 255.0
@@ -99,6 +96,7 @@ class MUADBaseDataset(Dataset):
         return dict(
             image=torch.tensor(image).permute(2, 0, 1).float(),
             label=torch.tensor(label).unsqueeze(0),
+            mask=torch.tensor(mask).unsqueeze(0),
         )
     
     def __len__(self):
@@ -142,4 +140,4 @@ class MUADDepthDataset(MUADBaseDataset):
         )
 
     def _load_label(self, path):
-        return load_depth(path, to_meters=not self.normalize)
+        return load_disparity(path)
