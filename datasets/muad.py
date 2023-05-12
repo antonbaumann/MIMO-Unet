@@ -85,7 +85,7 @@ class MUADBaseDataset(Dataset):
         if self.normalize:
             image = image / 255.0
 
-        label = self.load_label(self.label_path_dict[index_id])
+        label = self._load_label(self.label_path_dict[index_id])
 
         return dict(
             image=torch.tensor(image).permute(2, 0, 1).float(),
