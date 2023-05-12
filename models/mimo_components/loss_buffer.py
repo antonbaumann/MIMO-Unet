@@ -19,21 +19,28 @@ class LossBuffer:
             self, 
             subnetworks: int,
             temperature: float,
-            buffer_size: int, 
+            buffer_size: int,
+            deactivated: bool = False, 
         ) -> None:
         self.index = 0
         self.temperature = temperature
         self.buffer_size = buffer_size
+        self.deactivated = deactivated
+        self.subnetworks = subnetworks
         self.buffer = torch.zeros(buffer_size, subnetworks)
 
     def add(self, loss: torch.Tensor) -> None:
-        self.buffer[self.index] = loss
-        self.index = (self.index + 1) % self.buffer_size
+        if not self.deactivated:
+            self.buffer[self.index] = loss
+            self.index = (self.index + 1) % self.buffer_size
     
     def get_mean(self) -> torch.Tensor:
         return torch.mean(self.buffer, dim=0)
     
     def get_weights(self) -> torch.Tensor:
+        if self.deactivated:
+            return torch.ones(self.subnetworks)
+        
         mean = self.get_mean()
         if mean.sum() == 0:
             return torch.ones_like(mean)
