@@ -47,7 +47,6 @@ def main(args: Namespace):
         center_dropout_rate=args.center_dropout_rate,
         final_dropout_rate=args.final_dropout_rate,
         overall_dropout_rate=args.overall_dropout_rate,
-        loss_buffer_active=args.loss_buffer_active,
         loss_buffer_size=args.loss_buffer_size,
         loss_buffer_temperature=args.loss_buffer_temperature,
         input_repetition_probability=args.input_repetition_probability,
