@@ -104,6 +104,8 @@ class LaplaceNLL(UncertaintyLoss):
         log_scale = torch.max(log_scale, self.min_log_scale)
 
         diff = y_hat - y
+        diff[diff.isnan()] = 0.0
+        
         loss = log_scale + diff.abs() / torch.exp(log_scale)
         if reduce_mean:
             return torch.mean(loss)
