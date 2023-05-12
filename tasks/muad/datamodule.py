@@ -7,7 +7,7 @@ import os
 from utils import dir_path, parse_image_dimensions
 from datasets.muad import MUADDepthDataset
 
-class MUADDepthDatamodule(pl.DataModule):
+class MUADDepthDatamodule(pl.LightningDataModule):
     def __init__(
         self,
         dataset_dir: str,
