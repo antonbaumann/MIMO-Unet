@@ -47,6 +47,7 @@ class MimoUnetModel(pl.LightningModule):
         self.seed = seed
         self.input_repetition_probability = input_repetition_probability
         self.batch_repetitions = batch_repetitions
+        self.loss_buffer_active = loss_buffer_active
         self.loss_buffer_size = loss_buffer_size
         self.loss_buffer_temperature = loss_buffer_temperature
 
@@ -66,6 +67,7 @@ class MimoUnetModel(pl.LightningModule):
             buffer_size=self.loss_buffer_size,
             temperature=self.loss_buffer_temperature,
             subnetworks=self.num_subnetworks,
+            deactivated=not self.loss_buffer_active,
         )
 
         self.save_hyperparameters()
