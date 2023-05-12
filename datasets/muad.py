@@ -18,7 +18,7 @@ def load_disparity(path: str) -> np.array:
     disparity = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
     disparity = Image.fromarray(disparity)
     disparity = np.asarray(disparity, dtype=np.float32)
-    return disparity
+    return 1 - disparity
 
 def resize_img(
         data: np.array, 
@@ -34,7 +34,7 @@ def resize_img(
 def fix_depth_map(img):
     img = img.copy()
     mask = np.isfinite(img)
-    img[~mask] = 0
+    img[~mask] = 1
     return img, mask
 
 def get_filename_id(file_name: str) -> int:
