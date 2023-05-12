@@ -66,6 +66,12 @@ class MUADBaseDataset(Dataset):
         self.image_path_dict = create_path_dict(self.image_dir_path)
         self.label_path_dict = create_path_dict(self.label_dir_path)
         
+        common_keys = set(self.image_path_dict.keys()).intersection(set(self.label_path_dict.keys()))
+        if len(common_keys) != len(self.image_path_dict.keys()):
+            print(f'Warning: {len(self.image_path_dict.keys()) - len(common_keys)} image files do not have corresponding label files')
+        if len(common_keys) != len(self.label_path_dict.keys()):
+            print(f'Warning: {len(self.label_path_dict.keys()) - len(common_keys)} label files do not have corresponding image files')
+
         assert self.image_path_dict.keys() == self.label_path_dict.keys(), 'image and label path ids do not match'
 
         self.ids = np.array(list(self.image_path_dict.keys()))
