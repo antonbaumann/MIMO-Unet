@@ -72,6 +72,9 @@ class MUADBaseDataset(Dataset):
         if len(common_keys) != len(self.label_path_dict.keys()):
             print(f'Warning: {len(self.label_path_dict.keys()) - len(common_keys)} label files do not have corresponding image files')
 
+
+        print(self.image_path_dict.keys())
+        print(self.label_path_dict.keys())
         assert self.image_path_dict.keys() == self.label_path_dict.keys(), 'image and label path ids do not match'
 
         self.ids = np.array(list(self.image_path_dict.keys()))
