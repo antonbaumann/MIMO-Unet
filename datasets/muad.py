@@ -102,7 +102,9 @@ class MUADBaseDataset(Dataset):
             label = resize_img(label, dsize=self.dsize)
 
         # fill missing pixels in depth map
+        print(label.dtype)
         if label.dtype == np.float32:
+            print('hello')
             label = fix_depth_map(label)
 
         if self.normalize:
