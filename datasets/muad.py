@@ -31,7 +31,7 @@ def resize_img(
     data = cv2.resize(
         data, 
         dsize=dsize, 
-        interpolation=cv2.INTER_CUBIC
+        interpolation=cv2.INTER_NEAREST,
     )
     return data
 
@@ -78,14 +78,14 @@ class MUADBaseDataset(Dataset):
     def __getitem__(self, index):
         index_id = self.ids[index]
         image = load_img(self.image_path_dict[index_id])
+        label = self._load_label(self.label_path_dict[index_id])
         
         if self.dsize is not None:
             image = resize_img(image, dsize=self.dsize)
+            label = resize_img(label, dsize=self.dsize)
 
         if self.normalize:
             image = image / 255.0
-
-        label = self._load_label(self.label_path_dict[index_id])
 
         return dict(
             image=torch.tensor(image).permute(2, 0, 1).float(),
