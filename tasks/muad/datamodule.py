@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 import torch
 import os
 
-from utils import dir_path, parse_image_dimensions
+from utils import dir_path
 from datasets.muad import MUADDepthDataset
 
 class MUADDepthDatamodule(pl.LightningDataModule):
@@ -80,6 +80,8 @@ def get_datamodule(args: Namespace) -> MUADDepthDatamodule:
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=args.pin_memory,
+        normalize=args.normalize,
+        dsize=tuple(args.dsize),
     )
 
 def add_datamodule_args(parent_parser: ArgumentParser) -> ArgumentParser:
@@ -114,8 +116,8 @@ def add_datamodule_args(parent_parser: ArgumentParser) -> ArgumentParser:
 
     parser.add_argument(
         "--dsize",
-        nargs='+', 
-        type=parse_image_dimensions,
+        nargs='+',
+        type=int,
     )
 
     parser.add_argument(
