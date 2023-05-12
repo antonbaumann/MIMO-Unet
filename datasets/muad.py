@@ -89,7 +89,7 @@ class MUADBaseDataset(Dataset):
 
         return dict(
             image=torch.tensor(image).permute(2, 0, 1).float(),
-            label=label,
+            label=torch.tensor(label).unsqueeze(0),
         )
     
     def __len__(self):
@@ -113,9 +113,8 @@ class MUADSegmentationDataset(MUADBaseDataset):
         )
 
     def _load_label(self, path):
-        label = load_img(path)
-        return torch.tensor(label).unsqueeze(0).long()
-
+        return load_img(path)
+        
 
 class MUADDepthDataset(MUADBaseDataset):
     def __init__(
@@ -134,5 +133,4 @@ class MUADDepthDataset(MUADBaseDataset):
         )
 
     def _load_label(self, path):
-        label = load_depth(path, to_meters=not self.normalize)
-        return torch.tensor(label).unsqueeze(0).float()
+        return load_depth(path, to_meters=not self.normalize)
