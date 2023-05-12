@@ -36,21 +36,9 @@ def resize_img(
     )
     return data
 
-def fix_depth_map(img):
-    # Get the x, y coordinates of pixels that are not NaN
-    known_points = np.array(np.where(np.isfinite(img))).T
-    known_values = img[np.isfinite(img)]
-
-    # Get the x, y coordinates of all pixels in the image
-    all_points = np.array(np.where(np.ones_like(img))).T
-
-    # Use scipy's griddata to interpolate at the missing points
-    img_fixed = interpolate.griddata(known_points, known_values, all_points, method='nearest')
-    
-    # Reshape the interpolated data to the shape of the original image
-    img_fixed = img_fixed.reshape(img.shape)
-
-    return img_fixed
+def fix_depth_map(img, max_depth: float):
+    img[~np.isfinite(img)] = max_depth
+    return img
 
 def get_filename_id(file_name: str) -> int:
     return int(file_name.split('_')[0])
@@ -102,8 +90,8 @@ class MUADBaseDataset(Dataset):
             label = resize_img(label, dsize=self.dsize)
 
         # fill missing pixels in depth map
-        # if label.dtype == np.float32:
-        #     label = fix_depth_map(label)
+        if label.dtype == np.float32:
+            label = fix_depth_map(label, max_depth=1 if self.normalize else 400)
 
         if self.normalize:
             image = image / 255.0
