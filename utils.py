@@ -12,4 +12,5 @@ def dir_path(string) -> Path:
 def parse_image_dimensions(list: List[int]) -> tuple:
     if len(list) != 2:
         raise ValueError("Image dimensions must be a list of length 2.")
+    list = [int(x) for x in list]
     return tuple(list)
