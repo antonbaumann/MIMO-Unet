@@ -57,7 +57,7 @@ def main(args: Namespace):
         seed=args.seed,
     )
 
-    wandb_logger = WandbLogger(project="MIMO NYUv2Depth")
+    wandb_logger = WandbLogger(project="MIMO MUAD Depth")
     wandb_logger.watch(model, log="all", log_freq=500)
     wandb_logger.experiment.config.update(vars(args))
 
