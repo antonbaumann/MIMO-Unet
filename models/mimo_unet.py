@@ -23,6 +23,7 @@ class MimoUnetModel(pl.LightningModule):
             weight_decay: float,
             learning_rate: float,
             seed: int,
+            loss_buffer_active: bool,
             loss_buffer_size: int,
             loss_buffer_temperature: float,
             input_repetition_probability: float = 0.0,
@@ -273,6 +274,7 @@ class MimoUnetModel(pl.LightningModule):
         parser.add_argument("--loss", type=str, default="laplace_nll")
         parser.add_argument("--learning_rate", type=float, default=1e-3)
         parser.add_argument("--weight_decay", type=float, default=0.0)
+        parser.add_argument("--loss_buffer_active", type=bool, default=True)
         parser.add_argument("--loss_buffer_size", type=int, default=10)
         parser.add_argument("--loss_buffer_temperature", type=float, default=1.0)
         return parent_parser
