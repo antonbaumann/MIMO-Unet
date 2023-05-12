@@ -54,7 +54,7 @@ class GaussianNLL(UncertaintyLoss):
         log_variance = torch.max(log_variance, self.min_log_variance)
 
         diff = y_hat - y
-        diff[diff.isnan()] = 0.0
+        diff[~torch.isfinite(diff)] = 0.0
         
         loss = log_variance + diff ** 2 / torch.exp(log_variance)
         if reduce_mean:
@@ -104,8 +104,8 @@ class LaplaceNLL(UncertaintyLoss):
         log_scale = torch.max(log_scale, self.min_log_scale)
 
         diff = y_hat - y
-        diff[diff.isnan()] = 0.0
-        
+        diff[~torch.isfinite(diff)] = 0.0
+
         loss = log_scale + diff.abs() / torch.exp(log_scale)
         if reduce_mean:
             return torch.mean(loss)
