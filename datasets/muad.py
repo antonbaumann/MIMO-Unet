@@ -6,6 +6,7 @@ from PIL import Image
 import cv2
 from torch.utils.data import Dataset
 import os
+from tqdm import tqdm
 
 
 def load_img(path: str) -> np.array:
@@ -35,11 +36,12 @@ def resize_img(
     return data
 
 def get_filename_id(file_name: str) -> int:
-        return int(file_name.split('_')[0])
+    return int(file_name.split('_')[0])
     
 def create_path_dict(dir_path: str) -> dict:
     path_dict = {}
-    for file in os.listdir(dir_path):
+    print(f'Scanning all files in {dir_path}')
+    for file in tqdm(os.listdir(dir_path)):
         if file.endswith('.png'):
             file_id = get_filename_id(file)
             path_dict[file_id] = os.path.join(dir_path, file)

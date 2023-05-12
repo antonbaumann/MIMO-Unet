@@ -15,6 +15,9 @@ def softmax_temperature(tensor, temperature=1.0):
     return torch.nn.functional.softmax(scaled_tensor, dim=-1)
 
 class LossBuffer:
+    """
+    A buffer that stores the losses of the subnetworks and proposes weights to synchoronize learning of the subnetworks
+    """
     def __init__(
             self, 
             subnetworks: int,
