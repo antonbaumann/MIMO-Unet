@@ -66,7 +66,7 @@ class MUADDepthDatamodule(pl.LightningDataModule):
     
     def test_dataloader(self) -> torch.utils.data.DataLoader:
         return torch.utils.data.DataLoader(
-            self.data_valid,
+            self.data_val,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             shuffle=False,
