@@ -38,8 +38,8 @@ def resize_img(
 
 def fix_depth_map(img):
     # Get the x, y coordinates of pixels that are not NaN
-    known_points = np.array(np.where(~np.isnan(img))).T
-    known_values = img[~np.isnan(img)]
+    known_points = np.array(np.where(np.isfinite(img))).T
+    known_values = img[np.isfinite(img)]
 
     # Get the x, y coordinates of all pixels in the image
     all_points = np.array(np.where(np.ones_like(img))).T
@@ -102,9 +102,7 @@ class MUADBaseDataset(Dataset):
             label = resize_img(label, dsize=self.dsize)
 
         # fill missing pixels in depth map
-        print(label.dtype)
         if label.dtype == np.float32:
-            print('hello')
             label = fix_depth_map(label)
 
         if self.normalize:
