@@ -201,6 +201,7 @@ class MimoUnetModel(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
+        mask = batch["mask"] if "mask" in batch else None
 
         x = self._reshape_for_subnetwors(x, repeat=True)
         y = self._reshape_for_subnetwors(y, repeat=True)
@@ -208,7 +209,7 @@ class MimoUnetModel(pl.LightningModule):
         p1, p2 = self(x)
 
         # [S, ]
-        val_loss = self.loss_fn.forward(p1, p2, y, reduce_mean=False).mean(dim=(0, 2, 3, 4))
+        val_loss = self.loss_fn.forward(p1, p2, y, mask=mask, reduce_mean=False).mean(dim=(0, 2, 3, 4))
 
         # [B, S, 1, H, W]
         y_hat = self.loss_fn.mode(p1, p2)

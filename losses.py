@@ -6,7 +6,7 @@ class UncertaintyLoss(torch.nn.Module, ABC):
         super().__init__()
     
     @abstractmethod
-    def forward(self, y_hat, log_variance, y):
+    def forward(self, y_hat, log_variance, y, mask):
         pass
 
     @abstractmethod
@@ -37,6 +37,7 @@ class GaussianNLL(UncertaintyLoss):
         y_hat: torch.tensor, 
         log_variance: torch.tensor, 
         y: torch.tensor,
+        mask: torch.tensor = None,
         reduce_mean: bool = True,
     ):
         """Negative log-likelihood for a Gaussian distribution.
@@ -57,6 +58,10 @@ class GaussianNLL(UncertaintyLoss):
         diff[~torch.isfinite(diff)] = 0.0
         
         loss = log_variance + diff ** 2 / torch.exp(log_variance)
+
+        if mask is not None:
+            loss = loss * mask
+
         if reduce_mean:
             return torch.mean(loss)
         return loss
@@ -78,7 +83,7 @@ class GaussianNLL(UncertaintyLoss):
 
 
 class LaplaceNLL(UncertaintyLoss):
-    def __init__(self, eps: float = 1e-5):
+    def __init__(self, eps: float = 1e-4):
         super().__init__()
         self.min_log_scale = torch.log(torch.tensor(eps))
         
@@ -87,6 +92,7 @@ class LaplaceNLL(UncertaintyLoss):
         y_hat: torch.tensor, 
         log_scale: torch.tensor, 
         y: torch.tensor,
+        mask: torch.tensor = None,
         reduce_mean: bool = True,
     ):
         """Negative log-likelihood for a Laplace distribution.
@@ -107,6 +113,10 @@ class LaplaceNLL(UncertaintyLoss):
         diff[~torch.isfinite(diff)] = 0.0
 
         loss = log_scale + diff.abs() / torch.exp(log_scale)
+
+        if mask is not None:
+            loss = loss * mask
+
         if reduce_mean:
             return torch.mean(loss)
         return loss
