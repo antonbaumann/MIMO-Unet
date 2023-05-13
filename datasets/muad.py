@@ -1,20 +1,20 @@
-from typing import Optional
+from typing import Optional, Tuple, Dict
 import numpy as np
 import torch
 import imageio.v3 as iio
 from PIL import Image
 import cv2
 from torch.utils.data import Dataset
-from scipy import interpolate
 import os
-from tqdm import tqdm
 
 
 def load_img(path: str) -> np.array:
-    data = iio.imread(path)
-    return data
+    return iio.imread(path)
 
-def load_disparity(path: str) -> np.array:
+def load_scaled_depth(path: str) -> np.array:
+    """
+    Loads the scaled depth map from the given path (near: 0 - far: 1)
+    """
     disparity = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
     disparity = Image.fromarray(disparity)
     disparity = np.asarray(disparity, dtype=np.float32)
@@ -31,7 +31,7 @@ def resize_img(
     )
     return data
 
-def fix_depth_map(img):
+def fix_scaled_depth_map(img: np.array) -> Tuple[np.array, np.array]:
     img = img.copy()
     mask = np.isfinite(img)
     img[~mask] = 1
@@ -40,10 +40,9 @@ def fix_depth_map(img):
 def get_filename_id(file_name: str) -> int:
     return int(file_name.split('_')[0])
     
-def create_path_dict(dir_path: str) -> dict:
+def create_path_dict(dir_path: str) -> Dict[int, str]:
     path_dict = {}
-    print(f'Scanning all files in {dir_path}')
-    for file in tqdm(os.listdir(dir_path)):
+    for file in os.listdir(dir_path):
         if file.endswith('.png') or file.endswith('.exr'):
             file_id = get_filename_id(file)
             path_dict[file_id] = os.path.join(dir_path, file)
@@ -58,7 +57,7 @@ class MUADBaseDataset(Dataset):
             normalize: bool = True,
             shuffle_on_load: bool = False,
             label_dir: str = '',
-        ):
+        ) -> None:
         super().__init__()
         self.normalize = normalize
         self.image_dir_path = os.path.join(dataset_path, 'leftImg8bit')
@@ -74,10 +73,10 @@ class MUADBaseDataset(Dataset):
         if shuffle_on_load:
             self.ids = np.random.permutation(self.ids)
 
-    def _load_label(self, path):
+    def _load_label(self, path: str) -> np.array:
         raise NotImplementedError("This method should be overridden by subclass")
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Dict[str, torch.Tensor]:
         index_id = self.ids[index]
         image = load_img(self.image_path_dict[index_id])
         label = self._load_label(self.label_path_dict[index_id])
@@ -88,7 +87,7 @@ class MUADBaseDataset(Dataset):
 
         # fill missing pixels in depth map
         if label.dtype == np.float32:
-            label, mask = fix_depth_map(label)
+            label, mask = fix_scaled_depth_map(label)
 
         if self.normalize:
             image = image / 255.0
@@ -99,7 +98,7 @@ class MUADBaseDataset(Dataset):
             mask=torch.tensor(mask).unsqueeze(0),
         )
     
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.ids)
 
 
@@ -110,7 +109,7 @@ class MUADSegmentationDataset(MUADBaseDataset):
         dsize: Optional[tuple] = None,
         normalize: bool = True,
         shuffle_on_load: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             dataset_path=dataset_path, 
             dsize=dsize, 
@@ -119,7 +118,7 @@ class MUADSegmentationDataset(MUADBaseDataset):
             label_dir='leftLabel',
         )
 
-    def _load_label(self, path):
+    def _load_label(self, path: str) -> np.array:
         return load_img(path)
         
 
@@ -130,7 +129,7 @@ class MUADDepthDataset(MUADBaseDataset):
         dsize: Optional[tuple] = None,
         normalize: bool = True,
         shuffle_on_load: bool = False,
-    ):
+    ) -> None:
         super().__init__(
             dataset_path=dataset_path, 
             dsize=dsize, 
@@ -139,5 +138,5 @@ class MUADDepthDataset(MUADBaseDataset):
             label_dir='leftDepth',
         )
 
-    def _load_label(self, path):
-        return load_disparity(path)
+    def _load_label(self, path: str) -> np.array:
+        return load_scaled_depth(path)
