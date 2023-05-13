@@ -9,8 +9,6 @@ def dir_path(string) -> Path:
     else:
         raise NotADirectoryError(string)
     
-def parse_image_dimensions(list: List[int]) -> tuple:
-    if len(list) != 2:
-        raise ValueError("Image dimensions must be a list of length 2.")
-    list = [int(x) for x in list]
-    return tuple(list)
+
+def count_trainable_parameters(model) -> int:
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)

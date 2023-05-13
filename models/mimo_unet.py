@@ -5,6 +5,7 @@ import torch
 
 from losses import UncertaintyLoss
 from metrics import compute_regression_metrics
+from utils import count_trainable_parameters
 from .mimo_components.model import MimoUNet
 from .mimo_components.loss_buffer import LossBuffer
 
@@ -68,7 +69,10 @@ class MimoUnetModel(pl.LightningModule):
         )
 
         self.save_hyperparameters()
-        self.save_hyperparameters({"loss": loss})
+        self.save_hyperparameters({
+            "loss": loss,
+            "trainable_params": count_trainable_parameters(self.model),
+        })
 
 
     def _apply_input_transform(
