@@ -50,18 +50,14 @@ class GaussianNLL(UncertaintyLoss):
         Returns:
             Negative log-likelihood for a Gaussian distribution
         """
-
-        # Clip log variance to avoid possible division by zero
-        log_variance = torch.max(log_variance, self.min_log_variance)
-
         diff = y_hat - y
         diff[~torch.isfinite(diff)] = 0.0
 
-        variance = torch.exp(log_variance)
+        variance = torch.exp(log_variance).clone()
         with torch.no_grad():
             variance.clamp_(min=self.eps)
         
-        loss = log_variance + diff ** 2 / variance
+        loss = torch.log(variance) + diff ** 2 / variance
 
         if mask is not None:
             loss = loss * mask
@@ -111,7 +107,7 @@ class LaplaceNLL(UncertaintyLoss):
         """
         diff = y_hat - y
 
-        scale = torch.exp(log_scale)
+        scale = torch.exp(log_scale).clone()
         with torch.no_grad():
             scale.clamp_(min=self.eps)
 
