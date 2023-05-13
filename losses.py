@@ -118,9 +118,7 @@ class LaplaceNLL(UncertaintyLoss):
         loss = log_scale + diff.abs() / scale
 
         if mask is not None:
-            print(mask.shape)
-            print(loss.shape)
-            loss = loss * mask
+            loss = loss * mask.unsqueeze(dim=1)
 
         if reduce_mean:
             return torch.mean(loss)
