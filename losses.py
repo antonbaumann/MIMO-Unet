@@ -109,7 +109,7 @@ class LaplaceNLL(UncertaintyLoss):
 
         scale = torch.exp(log_scale).clone()
         with torch.no_grad():
-            scale.clamp_(min=self.eps)
+            scale.clamp_(min=self.eps, max=1e3)
 
         loss = torch.log(scale) + diff.abs() / scale
 
