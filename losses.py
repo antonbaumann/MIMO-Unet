@@ -28,9 +28,10 @@ class UncertaintyLoss(torch.nn.Module, ABC):
 
 
 class GaussianNLL(UncertaintyLoss):
-    def __init__(self, eps: float = 1e-5):
+    def __init__(self, eps_min: float = 1e-5, eps_max: float = 1e3):
         super().__init__()
-        self.min_log_variance = torch.log(torch.tensor(eps))
+        self.eps_min = eps_min
+        self.eps_max = eps_max
 
     def forward(
         self, 
@@ -55,7 +56,7 @@ class GaussianNLL(UncertaintyLoss):
 
         variance = torch.exp(log_variance).clone()
         with torch.no_grad():
-            variance.clamp_(min=self.eps)
+            variance.clamp_(min=self.eps_min, max=self.eps_max)
         
         loss = torch.log(variance) + diff ** 2 / variance
 
@@ -83,9 +84,10 @@ class GaussianNLL(UncertaintyLoss):
 
 
 class LaplaceNLL(UncertaintyLoss):
-    def __init__(self, eps: float = 1e-4):
+    def __init__(self, eps_min: float = 1e-5, eps_max: float = 1e3):
         super().__init__()
-        self.eps = eps
+        self.eps_min = eps_min
+        self.eps_max = eps_max
         
     def forward(
         self, 
@@ -109,7 +111,7 @@ class LaplaceNLL(UncertaintyLoss):
 
         scale = torch.exp(log_scale).clone()
         with torch.no_grad():
-            scale.clamp_(min=self.eps, max=1e3)
+            scale.clamp_(min=self.eps_min, max=self.eps_max)
 
         loss = torch.log(scale) + diff.abs() / scale
 
