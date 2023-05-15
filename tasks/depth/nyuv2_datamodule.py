@@ -28,19 +28,16 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         self,
         stage: Optional[str] = None,
     ) -> None:
-        trainval_data = NYUv2DepthDataset(
+        self.data_train = NYUv2DepthDataset(
             dataset_path=os.path.join(self.dataset_dir, "depth_train.h5"),
             normalize=self.normalize,
             shuffle_on_load=False,
         )
 
-        train_set_size = int(0.9 * len(trainval_data))
-        self.data_train, self.data_valid = torch.utils.data.random_split(
-            trainval_data, 
-            lengths=[
-                train_set_size, 
-                len(trainval_data) - train_set_size,
-            ],
+        self.data_valid = NYUv2DepthDataset(
+            dataset_path=os.path.join(self.dataset_dir, "depth_test.h5"),
+            normalize=self.normalize,
+            shuffle_on_load=True,
         )
 
         self.data_test = NYUv2DepthDataset(
