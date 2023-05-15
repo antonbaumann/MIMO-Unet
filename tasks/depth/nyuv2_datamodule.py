@@ -2,7 +2,6 @@ from typing import Optional
 from argparse import ArgumentParser, Namespace
 import pytorch_lightning as pl
 import torch
-import h5py
 import os
 
 from utils import dir_path
