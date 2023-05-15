@@ -29,17 +29,19 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         self,
         stage: Optional[str] = None,
     ) -> None:
-        h5_train = h5py.File(os.path.join(self.dataset_dir, "depth_train.h5"), "r")
-        h5_test = h5py.File(os.path.join(self.dataset_dir, "depth_test.h5"), "r")
-
-        self.data_train = NYUv2DepthDataset(
-            dict(image=h5_train["image"], label=h5_train["depth"]),
+        trainval_data = NYUv2DepthDataset(
+            dataset_path=os.path.join(self.dataset_dir, "depth_train.h5"),
             normalize=self.normalize,
             shuffle_on_load=False,
         )
 
+        self.data_train, self.data_valid = torch.utils.data.random_split(
+            trainval_data, 
+            lengths=[0.9, 0.1],
+        )
+
         self.data_test = NYUv2DepthDataset(
-            dict(image=h5_test["image"], label=h5_test["depth"]),
+            dataset_path=os.path.join(self.dataset_dir, "depth_test.h5"),
             normalize=self.normalize,
             shuffle_on_load=True,
         )
@@ -56,7 +58,7 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
     
     def val_dataloader(self) -> torch.utils.data.DataLoader:
         return torch.utils.data.DataLoader(
-            self.data_test,
+            self.data_valid,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             shuffle=False,

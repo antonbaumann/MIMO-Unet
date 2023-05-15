@@ -1,4 +1,5 @@
 from typing import Optional, Tuple, Dict
+from pathlib import Path
 import numpy as np
 import torch
 import imageio.v3 as iio
@@ -6,7 +7,11 @@ from PIL import Image
 import cv2
 from torch.utils.data import Dataset
 import os
+import logging
 
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def load_img(path: str) -> np.array:
     return iio.imread(path)
@@ -60,14 +65,28 @@ class MUADBaseDataset(Dataset):
         ) -> None:
         super().__init__()
         self.normalize = normalize
-        self.image_dir_path = os.path.join(dataset_path, 'leftImg8bit')
-        self.label_dir_path = os.path.join(dataset_path, label_dir)
         self.dsize = dsize
 
-        self.image_path_dict = create_path_dict(self.image_dir_path)
-        self.label_path_dict = create_path_dict(self.label_dir_path)
+        dataset_path = Path(dataset_path)
+        if not dataset_path.isdir():
+            raise ValueError(f"dataset path '{dataset_path}' is not a directory")
         
-        assert self.image_path_dict.keys() == self.label_path_dict.keys(), 'image and label path ids do not match'
+        self.image_dir_path = dataset_path / 'leftImg8bit'
+        if not self.image_dir_path.isdir():
+            raise ValueError(f"Image directory '{self.image_dir_path}' does not exist")
+
+        self.label_dir_path = dataset_path / label_dir
+        if not self.label_dir_path.isdir():
+            logger.warning(f"Label directory '{self.label_dir_path}' does not exist. \
+                           This is fine if you only intend to use this dataset for prediction.")
+            self.label_dir_path = None
+
+        self.image_path_dict = create_path_dict(self.image_dir_path)
+        if self.label_dir_path is not None:
+            self.label_path_dict = create_path_dict(self.label_dir_path)
+            assert self.image_path_dict.keys() == self.label_path_dict.keys(), 'image and label path ids do not match'
+        else:
+            self.label_path_dict = None
 
         self.ids = np.array(list(self.image_path_dict.keys()))
         if shuffle_on_load:
@@ -79,8 +98,16 @@ class MUADBaseDataset(Dataset):
     def __getitem__(self, index: int) -> Dict[str, torch.Tensor]:
         index_id = self.ids[index]
         image = load_img(self.image_path_dict[index_id])
-        label = self._load_label(self.label_path_dict[index_id])
+
+        # if no label is available, return only the image
+        if self.label_path_dict is None:
+            if self.dsize is not None:
+                image = resize_img(image, dsize=self.dsize)
+            return dict(
+                image=torch.tensor(image).permute(2, 0, 1).float(),
+            )
         
+        label = self._load_label(self.label_path_dict[index_id])
         if self.dsize is not None:
             image = resize_img(image, dsize=self.dsize)
             label = resize_img(label, dsize=self.dsize)
@@ -123,6 +150,9 @@ class MUADSegmentationDataset(MUADBaseDataset):
         
 
 class MUADDepthDataset(MUADBaseDataset):
+    """
+    Loads the scaled depth map from the given path [near: 0,  far: 1]
+    """
     def __init__(
         self,
         dataset_path: str,
@@ -140,3 +170,7 @@ class MUADDepthDataset(MUADBaseDataset):
 
     def _load_label(self, path: str) -> np.array:
         return load_scaled_depth(path)
+    
+    @staticmethod
+    def depth_to_meters(depth_map: np.array) -> np.array:
+        return depth_map * 400.0
