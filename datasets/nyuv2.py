@@ -25,7 +25,7 @@ class NYUv2DepthDataset(Dataset):
 
         if self.normalize:
             image = image / 255.0
-            label = label / 255.0
+            label = 1 - label / 255.0 # convert disparity to depth
 
         return {
             'image': torch.tensor(image).permute(2, 0, 1).float(),
