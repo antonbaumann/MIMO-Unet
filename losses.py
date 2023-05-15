@@ -83,7 +83,7 @@ class GaussianNLL(UncertaintyLoss):
 
 
 class LaplaceNLL(UncertaintyLoss):
-    def __init__(self, eps: float = 1e-3):
+    def __init__(self, eps: float = 1e-4):
         super().__init__()
         self.eps = eps
         
