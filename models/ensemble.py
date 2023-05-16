@@ -50,10 +50,15 @@ class EnsembleModule(pl.LightningModule):
         for model in self.models:
             x_rep = repeat_subnetworks(x, num_subnetworks=model.num_subnetworks)
             
-            for _ in range(self.monte_carlo_steps):
+            if self.monte_carlo_steps == 0:
                 p1, p2 = model(x_rep)
                 p1_list.append(p1)
                 p2_list.append(p2)
+            else:
+                for _ in range(self.monte_carlo_steps):
+                    p1, p2 = model(x_rep)
+                    p1_list.append(p1)
+                    p2_list.append(p2)
         
         p1 = torch.cat(p1_list, dim=1)
         p2 = torch.cat(p2_list, dim=1)
