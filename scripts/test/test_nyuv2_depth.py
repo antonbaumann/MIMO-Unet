@@ -180,4 +180,5 @@ if __name__ == "__main__":
             ("test", os.path.join(args.dataset_dir, "depth_test.h5")),
             ("ood", os.path.join(args.dataset_dir, "apolloscape_test.h5")),
         ],
+        result_dir=args.result_dir,
     )
