@@ -44,6 +44,8 @@ class EnsembleModule(pl.LightningModule):
             p2: [B, S, C_out, H, W]
         """
         p1_list, p2_list = [], []
+
+        print(self.models)
         
         for model in self.models:
             x_rep = repeat_subnetworks(x, num_subnetworks=model.num_subnetworks)
