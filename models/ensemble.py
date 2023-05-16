@@ -22,6 +22,9 @@ class EnsembleModule(pl.LightningModule):
                 model.eval()
         else:
             self.activate_mc_dropout()
+
+        # todo: check if all models have same loss_fn
+        self.loss_fn = self.models[0].loss_fn
             
     def activate_mc_dropout(self):
         for model in self.models:
