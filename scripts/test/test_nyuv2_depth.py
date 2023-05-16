@@ -7,6 +7,7 @@ import scipy.stats
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import os
 
 from models.ensemble import EnsembleModule
 from datasets.nyuv2 import NYUv2DepthDataset
@@ -168,4 +169,15 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--model_checkpoint_paths", nargs="+", type=str, required=True)
     parser.add_argument("--result_dir", type=str, required=True)
+    parser.add_argument("--dataset_dir", type=str, required=True)
     parser.add_argument("--monte_carlo_steps", type=int, default=0)
+    args = parser.parse_args()
+
+    main(
+        model_checkpoint_paths=args.model_checkpoint_paths,
+        monte_carlo_steps=args.monte_carlo_steps,
+        datasets=[
+            ("test", os.path.join(args.dataset_dir, "depth_test.h5")),
+            ("ood", os.path.join(args.dataset_dir, "apolloscape_test.h5")),
+        ],
+    )
