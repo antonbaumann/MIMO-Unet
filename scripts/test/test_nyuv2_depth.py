@@ -135,8 +135,6 @@ def main(
         monte_carlo_steps=monte_carlo_steps,
     )
 
-    print(model_checkpoint_paths)
-
     for dataset_name, dataset_path in datasets:
         dataset = NYUv2DepthDataset(
             dataset_path=dataset_path,
