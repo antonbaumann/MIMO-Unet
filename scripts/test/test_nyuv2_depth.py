@@ -97,7 +97,7 @@ def compute_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def create_precision_recall_plot(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.sort_values(by='aleatoric_std', ascending=False)
+    df = df.sort_values(by='combined_std', ascending=False)
     
     percentiles = np.arange(100)/100.
     cutoff_inds = (percentiles * df.shape[0]).astype(int)
