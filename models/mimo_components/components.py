@@ -23,9 +23,15 @@ class DoubleConv(nn.Module):
             nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1, padding_mode="reflect", groups=groups),
             nn.BatchNorm2d(mid_channels),
             nn.ReLU(inplace=True),
+
+            nn.Conv2d(mid_channels, mid_channels, kernel_size=3, padding=1, padding_mode="reflect", groups=groups),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+
             nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1, padding_mode="reflect", groups=groups),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
+            
             nn.Dropout2d(dropout_rate, inplace=True),
         )
 
@@ -79,7 +85,7 @@ class Up(nn.Module):
             self.conv = DoubleConv(
                 in_channels=in_channels, 
                 out_channels=out_channels, 
-                mid_channels=in_channels // 2, 
+                # mid_channels=in_channels // 2, 
                 groups=groups, 
                 dropout_rate=dropout_rate,
             )
@@ -88,7 +94,7 @@ class Up(nn.Module):
             self.conv = DoubleConv(
                 in_channels=in_channels, 
                 out_channels=out_channels, 
-                mid_channels=in_channels // 2, 
+                # mid_channels=in_channels // 2, 
                 groups=groups, 
                 dropout_rate=dropout_rate,
             )
