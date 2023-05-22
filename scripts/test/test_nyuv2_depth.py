@@ -141,12 +141,20 @@ def main(
             normalize=True,
         )
 
+        print(f"Making predictions on {dataset_name}...")
         y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars = make_predictions(
             model=model,
             dataset=dataset,
             batch_size=32,
         )
+
+        print(f"Saving predictions on {dataset_name}...")
+        np.save(result_dir / f"{dataset_name}_y_preds.npy", y_preds.numpy())
+        np.save(result_dir / f"{dataset_name}_y_trues.npy", y_trues.numpy())
+        np.save(result_dir / f"{dataset_name}_aleatoric_vars.npy", aleatoric_vars.numpy())
+        np.save(result_dir / f"{dataset_name}_epistemic_vars.npy", epistemic_vars.numpy())
         
+        print(f"Computing metrics on {dataset_name}...")
         df = convert_to_pandas(
             y_preds=y_preds,
             y_trues=y_trues,
@@ -154,7 +162,8 @@ def main(
             epistemic_vars=epistemic_vars,
             combined_vars=combined_vars,
         )
-        
+
+        print(f"Saving dataframes for {dataset_name}...")
         df = compute_metrics(df)
         df.to_csv(result_dir / f"{dataset_name}_metrics.csv", index=False)
         
