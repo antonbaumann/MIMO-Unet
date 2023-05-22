@@ -13,11 +13,6 @@ from models.ensemble import EnsembleModule
 from datasets.nyuv2 import NYUv2DepthDataset
 
 
-def repeat_subnetworks(x, num_subnetworks):
-    x = x[:, None, :, :, :]
-    return x.repeat(1, num_subnetworks, 1, 1, 1)
-
-
 def make_predictions(model, dataset, batch_size: int = 32):
     y_preds = []
     y_trues = []

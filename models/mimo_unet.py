@@ -75,6 +75,102 @@ class MimoUnetModel(pl.LightningModule):
             "trainable_params": count_trainable_parameters(self.model),
         })
 
+    def forward(self, x: torch.Tensor):
+        """
+        Args:
+            x: [B, S, C_in, H, W]
+        Returns:
+            p1: [B, S, C_out, H, W]
+            p2: [B, S, C_out, H, W]
+        """
+        B, S, C_in, H, W = x.shape
+
+        assert S == self.num_subnetworks, "subnetwork dimension must match num_subnetworks"
+        assert C_in == self.in_channels, "channel dimension must match in_channels"
+
+        # [B, S, 2*C_out, H, W]
+        out = self.model(x)
+
+        # [B, S, C_out, H, W]
+        p1 = out[:, :, :self.out_channels // 2, ...]
+        p2 = out[:, :, self.out_channels // 2:, ...]
+
+        return p1, p2
+    
+    def training_step(self, batch, batch_idx):
+        image, label = batch["image"], batch["label"]
+        
+        image_transformed, label_transformed = self._apply_input_transform(image, label)
+
+        p1, p2 = self(image_transformed)
+        y_hat = self.loss_fn.mode(p1, p2)
+        aleatoric_std = self.loss_fn.std(p1, p2)
+
+        loss, loss_weighted, weights = self._calculate_train_loss(p1, p2, label_transformed)
+
+        self._log_train_loss_and_weights(loss, weights)
+        self._log_metrics(y_hat, label_transformed)
+
+        return {
+            "loss": loss_weighted.mean(),
+            "label": self._flatten_subnetwork_dimension(label_transformed),
+            "preds": self._flatten_subnetwork_dimension(y_hat), 
+            "aleatoric_std_map": self._flatten_subnetwork_dimension(aleatoric_std), 
+            "err_map": self._flatten_subnetwork_dimension(y_hat - label_transformed),
+        }
+    
+    def validation_step(self, batch, batch_idx):
+        x, y = batch["image"], batch["label"]
+        mask = batch["mask"] if "mask" in batch else None
+
+        x = self._repeat_subnetworks(x)
+        y = self._repeat_subnetworks(y)
+
+        p1, p2 = self(x)
+
+        # [S, ]
+        val_loss = self.loss_fn.forward(p1, p2, y, mask=mask, reduce_mean=False).mean(dim=(0, 2, 3, 4))
+
+        # [B, S, 1, H, W]
+        y_hat = self.loss_fn.mode(p1, p2)
+        aleatoric_std = self.loss_fn.std(p1, p2).mean(dim=1)
+        y_hat_mean = y_hat.mean(dim=1, keepdim=True)
+        y_mean = y.mean(dim=1)
+
+        if self.num_subnetworks == 1:
+            epistemic_std = torch.zeros_like(aleatoric_std)
+        else:
+            epistemic_std = (torch.sum((y_hat - y_hat_mean) ** 2, dim=1) * (1 / (self.num_subnetworks - 1))) ** 0.5
+
+        self.log("val_loss", val_loss.mean(), batch_size=self.trainer.datamodule.batch_size)
+        for subnetwork_idx in range(val_loss.shape[0]):
+            self.log(f"val_loss_{subnetwork_idx}", val_loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
+
+        combined_std = (aleatoric_std ** 2 + epistemic_std ** 2) ** 0.5
+        combined_log_scale = torch.log(combined_std / (2 ** 0.5))
+        val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), combined_log_scale, y_mean, reduce_mean=True)
+        self.log("val_loss_combined", val_loss_combined, batch_size=self.trainer.datamodule.batch_size)
+
+        self._log_metrics(y_hat_mean, y_mean, stage="val")
+       
+        return {
+            "loss": val_loss.mean(),
+            "label": y_mean,
+            "preds": y_hat_mean.squeeze(dim=1), 
+            "aleatoric_std_map": aleatoric_std, 
+            "epistemic_std_map": epistemic_std,
+            "err_map": y_hat_mean.squeeze(dim=1) - y_mean,
+        }
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, verbose=True)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=12, gamma=0.5, verbose=True)
+        return dict(
+            optimizer=optimizer,
+            lr_scheduler=scheduler,
+            monitor="val_loss",
+        )
 
     def _apply_input_transform(
             self, 
@@ -125,42 +221,20 @@ class MimoUnetModel(pl.LightningModule):
         # [B // S, S, C, H, W] -> [B, C, H, W]
         return x.view(B_ * S, C, H, W)
 
-    def forward(self, x: torch.Tensor):
-        """
-        Args:
-            x: [B, S, C_in, H, W]
-        Returns:
-            p1: [B, S, C_out, H, W]
-            p2: [B, S, C_out, H, W]
-        """
-        B, S, C_in, H, W = x.shape
-
-        assert S == self.num_subnetworks, "subnetwork dimension must match num_subnetworks"
-        assert C_in == self.in_channels, "channel dimension must match in_channels"
-
-        # [B, S, 2*C_out, H, W]
-        out = self.model(x)
-
-        # [B, S, C_out, H, W]
-        p1 = out[:, :, :self.out_channels // 2, ...]
-        p2 = out[:, :, self.out_channels // 2:, ...]
-
-        return p1, p2
-
-    def calculate_loss(self, p1, p2, label_transformed):
+    def _calculate_train_loss(self, p1, p2, label_transformed):
         loss = self.loss_fn.forward(p1, p2, label_transformed, reduce_mean=False).mean(dim=(0, 2, 3, 4))
         weights = self.loss_buffer.get_weights().to(loss.device)
         loss_weighted = loss * weights
         self.loss_buffer.add(loss.detach())
         return loss, loss_weighted, weights
     
-    def log_loss_and_weights(self, loss, weights):
+    def _log_train_loss_and_weights(self, loss, weights):
         self.log("train_loss", loss.mean(), batch_size=self.trainer.datamodule.batch_size)
         for subnetwork_idx in range(loss.shape[0]):
             self.log(f"train_loss_{subnetwork_idx}", loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
             self.log(f"train_weight_{subnetwork_idx}", weights[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
     
-    def log_metrics(
+    def _log_metrics(
             self, 
             y_hat, 
             label_transformed,
@@ -180,81 +254,6 @@ class MimoUnetModel(pl.LightningModule):
                 metric_attribute=name,
                 batch_size=self.trainer.datamodule.batch_size,
             )
-
-    def training_step(self, batch, batch_idx):
-        image, label = batch["image"], batch["label"]
-        
-        image_transformed, label_transformed = self._apply_input_transform(image, label)
-
-        p1, p2 = self(image_transformed)
-        y_hat = self.loss_fn.mode(p1, p2)
-        aleatoric_std = self.loss_fn.std(p1, p2)
-
-        loss, loss_weighted, weights = self.calculate_loss(p1, p2, label_transformed)
-
-        self.log_loss_and_weights(loss, weights)
-        self.log_metrics(y_hat, label_transformed)
-
-        return {
-            "loss": loss_weighted.mean(),
-            "label": self._flatten_subnetwork_dimension(label_transformed),
-            "preds": self._flatten_subnetwork_dimension(y_hat), 
-            "aleatoric_std_map": self._flatten_subnetwork_dimension(aleatoric_std), 
-            "err_map": self._flatten_subnetwork_dimension(y_hat - label_transformed),
-        }
-    
-    def validation_step(self, batch, batch_idx):
-        x, y = batch["image"], batch["label"]
-        mask = batch["mask"] if "mask" in batch else None
-
-        x = self._repeat_subnetworks(x)
-        y = self._repeat_subnetworks(y)
-
-        p1, p2 = self(x)
-
-        # [S, ]
-        val_loss = self.loss_fn.forward(p1, p2, y, mask=mask, reduce_mean=False).mean(dim=(0, 2, 3, 4))
-
-        # [B, S, 1, H, W]
-        y_hat = self.loss_fn.mode(p1, p2)
-        aleatoric_std = self.loss_fn.std(p1, p2).mean(dim=1)
-        y_hat_mean = y_hat.mean(dim=1, keepdim=True)
-        y_mean = y.mean(dim=1)
-
-        if self.num_subnetworks == 1:
-            epistemic_std = torch.zeros_like(aleatoric_std)
-        else:
-            epistemic_std = (torch.sum((y_hat - y_hat_mean) ** 2, dim=1) * (1 / (self.num_subnetworks - 1))) ** 0.5
-
-        self.log("val_loss", val_loss.mean(), batch_size=self.trainer.datamodule.batch_size)
-        for subnetwork_idx in range(val_loss.shape[0]):
-            self.log(f"val_loss_{subnetwork_idx}", val_loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
-
-        combined_std = (aleatoric_std ** 2 + epistemic_std ** 2) ** 0.5
-        combined_log_scale = torch.log(combined_std / (2 ** 0.5))
-        val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), combined_log_scale, y_mean, reduce_mean=True)
-        self.log("val_loss_combined", val_loss_combined, batch_size=self.trainer.datamodule.batch_size)
-
-        self.log_metrics(y_hat_mean, y_mean, stage="val")
-       
-        return {
-            "loss": val_loss.mean(),
-            "label": y_mean,
-            "preds": y_hat_mean.squeeze(dim=1), 
-            "aleatoric_std_map": aleatoric_std, 
-            "epistemic_std_map": epistemic_std,
-            "err_map": y_hat_mean.squeeze(dim=1) - y_mean,
-        }
-
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
-        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, verbose=True)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=12, gamma=0.5, verbose=True)
-        return dict(
-            optimizer=optimizer,
-            lr_scheduler=scheduler,
-            monitor="val_loss",
-        )
     
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser):
