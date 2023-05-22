@@ -33,8 +33,8 @@ class MimoUNet(nn.Module):
             bilinear,
             filter_base_count,
             center_dropout_rate,
-            overall_dropout_rate,
             final_dropout_rate,
+            overall_dropout_rate,
             use_pooling_indices,
         )
         super(MimoUNet, self).__init__()
