@@ -1,3 +1,4 @@
+from typing import List, Tuple
 import logging
 import torch
 from torch import nn
@@ -8,53 +9,70 @@ from .components import Up, Down, DoubleConv, OutConv
 logger = logging.getLogger(__name__)
 
 
-class MimoUNet(nn.Module):
+def create_module_list(self, module: nn.Module, num_subnetworks: int, **kwargs):
+    return nn.ModuleList([module(**kwargs) for _ in range(num_subnetworks)])
+
+
+class SubnetworkEncoder(nn.Module):
     def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        num_subnetworks: int,
-        filter_base_count: int = 30,
-        center_dropout_rate: float = 0.0,
-        final_dropout_rate: float = 0.0,
-        overall_dropout_rate: float = 0.0,
-        bilinear: bool = True,
-        use_pooling_indices: bool = False,
-    ):
-        if overall_dropout_rate > 0.0 and (center_dropout_rate > 0.0 or final_dropout_rate > 0.0):
-            raise ValueError("Do not specify overall_dropout_rate together with center_dropout_rate or final_dropout_rate!")
+        self, 
+        num_subnetworks: int, 
+        in_channels: int, 
+        filter_base_count: int, 
+        overall_dropout_rate: float, 
+        use_pooling_indices: bool
+    ) -> None:
+        super(SubnetworkEncoder, self).__init__()
         
-        logger.info(
-            "Creating UNet with arguments: in_channels=%d, out_channels=%d, num_subnetworks=%d, bilinear=%s, filter_base_count=%d, "
-            "center_dropout_rate=%f, final_dropout_rate=%f, overall_dropout_rate=%f, use_pooling_indices=%s",
-            in_channels,
-            out_channels,
+        self.in_convs = create_module_list(
+            DoubleConv,
             num_subnetworks,
-            bilinear,
-            filter_base_count,
-            center_dropout_rate,
-            final_dropout_rate,
-            overall_dropout_rate,
-            use_pooling_indices,
+            in_channels=in_channels,
+            out_channels=filter_base_count,
+            dropout_rate=overall_dropout_rate,
         )
-        super(MimoUNet, self).__init__()
 
-        self.in_convs = nn.ModuleList()
-        for i in range(num_subnetworks):
-            self.in_convs.append(DoubleConv(
-                in_channels=in_channels, 
-                out_channels=filter_base_count, 
-                dropout_rate=overall_dropout_rate,
-            ))
+        self.down1s = create_module_list(
+            Down,
+            num_subnetworks,
+            in_channels=filter_base_count,
+            out_channels=2 * filter_base_count,
+            use_pooling_indices=use_pooling_indices,
+            dropout_rate=overall_dropout_rate,
+        )
 
-        self.down1s = nn.ModuleList()
-        for i in range(num_subnetworks):
-            self.down1s.append(Down(
-                in_channels=filter_base_count, 
-                out_channels=2 * filter_base_count, 
-                use_pooling_indices=use_pooling_indices,
-                dropout_rate=overall_dropout_rate,
-            ))
+    def forward(
+        self, 
+        x: torch.Tensor
+    ) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
+        _, S, _, _, _ = x.shape
+
+        x1s = []
+        x2s = []
+        ind2s = []
+
+        for i in range(S):
+            x1 = self.in_convs[i](x[:, i])
+            x2, ind2 = self.down1s[i](x1)
+
+            x1s.append(x1)
+            x2s.append(x2)
+            ind2s.append(ind2)
+
+        return x1s, x2s, ind2s
+
+
+class SubnetworkCore(nn.Module):
+    def __init__(
+        self, 
+        num_subnetworks: int, 
+        filter_base_count: int, 
+        overall_dropout_rate: float, 
+        center_dropout_rate: float, 
+        bilinear: bool,
+        use_pooling_indices: bool,
+    ) -> None:
+        super(SubnetworkCore, self).__init__()
 
         self.down2 = Down(
             in_channels=2 * filter_base_count * num_subnetworks, 
@@ -98,28 +116,130 @@ class MimoUNet(nn.Module):
             dropout_rate=overall_dropout_rate,
         )
 
-        self.up4s = nn.ModuleList()
-        for i in range(num_subnetworks):
-            self.up4s.append(Up(
-                in_channels=2 * filter_base_count * num_subnetworks // self.factor + filter_base_count, 
-                out_channels=filter_base_count, 
-                bilinear=bilinear, 
-                use_pooling_indices=use_pooling_indices, 
-                dropout_rate=overall_dropout_rate,
-            ))
+    def forward(
+        self, 
+        x: torch.Tensor
+    ) -> Tuple[torch.Tensor, List[torch.Tensor]]:
+        x3, ind3 = self.down2(x)
+        x4, ind4 = self.down3(x3)
+        x5, ind5 = self.down4(x4)
+        x_drop = self.center_dropout(x5)
+        x = self.up1(x_drop, x4, ind5)
+        x = self.up2(x, x3, ind4)
+        x = self.up3(x, x, ind3)
+        return x
 
-        self.final_dropouts = nn.ModuleList()
-        for i in range(num_subnetworks):
-            self.final_dropouts.append(
-                nn.Dropout(p=final_dropout_rate)
-            )
 
-        self.outcs = nn.ModuleList()
-        for i in range(num_subnetworks):
-            self.outcs.append(OutConv(
-                in_channels=filter_base_count, 
-                out_channels=out_channels,
-            ))
+class SubnetworkDecoder(nn.Module):
+    def __init__(
+        self,
+        num_subnetworks: int,
+        filter_base_count: int,
+        overall_dropout_rate: float,
+        bilinear: bool,
+        use_pooling_indices: bool,
+        final_dropout_rate: float,
+        out_channels: int
+    ) -> None:
+        super(SubnetworkDecoder, self).__init__()
+
+        self.up4s = create_module_list(
+            module=Up,
+            num_subnetworks=num_subnetworks,
+            in_channels=2 * filter_base_count + filter_base_count,
+            out_channels=filter_base_count,
+            bilinear=bilinear,
+            use_pooling_indices=use_pooling_indices,
+            dropout_rate=overall_dropout_rate,
+        )
+
+        self.final_dropouts = create_module_list(
+            module=nn.Dropout,
+            num_subnetworks=num_subnetworks,
+            p=final_dropout_rate,
+        )
+
+        self.outcs = create_module_list(
+            module=OutConv,
+            num_subnetworks=num_subnetworks,
+            in_channels=filter_base_count,
+            out_channels=out_channels,
+        )
+
+    def forward(
+        self, 
+        x: torch.Tensor,
+        x1s: List[torch.Tensor], 
+        ind2s: List[torch.Tensor]
+    ) -> torch.Tensor:
+        _, S, _, _, _ = x.shape
+
+        logits = []
+        for i in range(S):
+            x_i = self.up4s[i](x, x1s[i], ind2s[i])
+            x_i = self.final_dropouts[i](x_i)
+            logits.append(self.outcs[i](x_i))
+        
+        return torch.stack(logits, axis=1)
+
+
+class MimoUNet(nn.Module):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        num_subnetworks: int,
+        filter_base_count: int = 30,
+        center_dropout_rate: float = 0.0,
+        final_dropout_rate: float = 0.0,
+        overall_dropout_rate: float = 0.0,
+        bilinear: bool = True,
+        use_pooling_indices: bool = False,
+    ):
+        if overall_dropout_rate > 0.0 and (center_dropout_rate > 0.0 or final_dropout_rate > 0.0):
+            raise ValueError("Do not specify overall_dropout_rate together with center_dropout_rate or final_dropout_rate!")
+        
+        logger.info(
+            "Creating UNet with arguments: in_channels=%d, out_channels=%d, num_subnetworks=%d, bilinear=%s, filter_base_count=%d, "
+            "center_dropout_rate=%f, final_dropout_rate=%f, overall_dropout_rate=%f, use_pooling_indices=%s",
+            in_channels,
+            out_channels,
+            num_subnetworks,
+            bilinear,
+            filter_base_count,
+            center_dropout_rate,
+            final_dropout_rate,
+            overall_dropout_rate,
+            use_pooling_indices,
+        )
+        super(MimoUNet, self).__init__()
+
+        self.encoder = SubnetworkEncoder(
+            num_subnetworks=num_subnetworks,
+            in_channels=in_channels,
+            filter_base_count=filter_base_count,
+            overall_dropout_rate=overall_dropout_rate,
+            use_pooling_indices=use_pooling_indices,
+        )
+
+        self.core = SubnetworkCore(
+            num_subnetworks=num_subnetworks,
+            filter_base_count=filter_base_count,
+            overall_dropout_rate=overall_dropout_rate,
+            center_dropout_rate=center_dropout_rate,
+            bilinear=bilinear,
+            use_pooling_indices=use_pooling_indices,
+        )
+
+        self.decoder = SubnetworkDecoder(
+            num_subnetworks=num_subnetworks,
+            filter_base_count=filter_base_count,
+            overall_dropout_rate=overall_dropout_rate,
+            bilinear=bilinear,
+            use_pooling_indices=use_pooling_indices,
+            final_dropout_rate=final_dropout_rate,
+            out_channels=out_channels,
+        )
 
     def forward(self, x):
         """
@@ -137,32 +257,11 @@ class MimoUNet(nn.Module):
 
         _, S, _, _, _ = x.shape
 
-        x1s = []
-        x2s = []
-        ind2s = []
-
-        for i in range(S):
-            x1 = self.in_convs[i](x[:, i])
-            x2, ind2 = self.down1s[i](x1)
-
-            x1s.append(x1)
-            x2s.append(x2)
-            ind2s.append(ind2)
+        x1s, x2s, ind2s = self.encoder(x)
         
         # concatenate along channel dimension
         x2_concat = torch.cat(x2s, axis=1)
 
-        x3, ind3 = self.down2(x2_concat)
-        x4, ind4 = self.down3(x3)
-        x5, ind5 = self.down4(x4)
-        x_drop = self.center_dropout(x5)
-        x = self.up1(x_drop, x4, ind5)
-        x = self.up2(x, x3, ind4)
-        x = self.up3(x, x2_concat, ind3)
+        x = self.core(x2_concat)
 
-        logits = []
-        for i in range(S):
-            x_i = self.up4s[i](x, x1s[i], ind2s[i])
-            x_i = self.final_dropouts[i](x_i)
-            logits.append(self.outcs[i](x_i))
-        return torch.stack(logits, axis=1)
+        return self.decoder(x, x1s, ind2s)

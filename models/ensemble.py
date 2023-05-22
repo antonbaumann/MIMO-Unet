@@ -4,8 +4,7 @@ from typing import List
 from models.mimo_unet import MimoUnetModel
 
 def repeat_subnetworks(x, num_subnetworks):
-    x = x[:, None, :, :, :]
-    return x.repeat(1, num_subnetworks, 1, 1, 1)
+    return x.unsqueeze(1).repeat(1, num_subnetworks, 1, 1, 1)
 
 class EnsembleModule(pl.LightningModule):
     def __init__(
@@ -17,26 +16,22 @@ class EnsembleModule(pl.LightningModule):
         self.models = [MimoUnetModel.load_from_checkpoint(path) for path in checkpoint_paths]
         self.monte_carlo_steps = monte_carlo_steps
         
-        if self.monte_carlo_steps == 0:
-            for model in self.models:
-                model.eval()
-        else:
-            self.activate_mc_dropout()
+        for model in self.models:
+            model.eval()
+            if self.monte_carlo_steps > 0:
+                self._activate_mc_dropout(model)
 
         # todo: check if all models have same loss_fn
         self.loss_fn = self.models[0].loss_fn
             
-    def activate_mc_dropout(self):
-        for model in self.models:
-            model.eval()
-            for m in model.modules():
-                # activate training mode for Dropout, Dropout2d, etc. layers
-                if m.__class__.__name__.startswith('Dropout'):
-                    m.train()
+    def _activate_mc_dropout(self, model):
+        for module in model.modules():
+            if module.__class__.__name__.startswith('Dropout'):
+                module.train()
         
     @property
     def num_subnetworks(self):
-        return sum([model.num_subnetworks] for model in self.models)
+        return sum(model.num_subnetworks for model in self.models)
         
     def forward(self, x: torch.Tensor):
         """
@@ -51,15 +46,10 @@ class EnsembleModule(pl.LightningModule):
         for model in self.models:
             x_rep = repeat_subnetworks(x, num_subnetworks=model.num_subnetworks)
             
-            if self.monte_carlo_steps == 0:
+            for _ in range(max(1, self.monte_carlo_steps)):
                 p1, p2 = model(x_rep)
                 p1_list.append(p1)
                 p2_list.append(p2)
-            else:
-                for _ in range(self.monte_carlo_steps):
-                    p1, p2 = model(x_rep)
-                    p1_list.append(p1)
-                    p2_list.append(p2)
         
         p1 = torch.cat(p1_list, dim=1)
         p2 = torch.cat(p2_list, dim=1)
