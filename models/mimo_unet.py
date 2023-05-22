@@ -109,9 +109,9 @@ class MimoUnetModel(pl.LightningModule):
         )
         return image_transformed, label_transformed
 
-    def _repeat_subnetworks(self, x: torch.Tensor, num_subnetworks: int):
+    def _repeat_subnetworks(self, x: torch.Tensor):
         x = x[:, None, :, :, :]
-        return x.repeat(1, num_subnetworks, 1, 1, 1)
+        return x.repeat(1, self.num_subnetworks, 1, 1, 1)
 
     def _flatten_subnetwork_dimension(self, x: torch.Tensor):
         """
@@ -200,8 +200,8 @@ class MimoUnetModel(pl.LightningModule):
         x, y = batch["image"], batch["label"]
         mask = batch["mask"] if "mask" in batch else None
 
-        x = self._repeat_subnetworks(x, repeat=True)
-        y = self._repeat_subnetworks(y, repeat=True)
+        x = self._repeat_subnetworks(x)
+        y = self._repeat_subnetworks(y)
 
         p1, p2 = self(x)
 
