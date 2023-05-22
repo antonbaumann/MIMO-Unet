@@ -144,11 +144,12 @@ class SubnetworkDecoder(nn.Module):
         super(SubnetworkDecoder, self).__init__()
 
         self.num_subnetworks = num_subnetworks
+        self.factor = 2 if (bilinear or use_pooling_indices) else 1
 
         self.up4s = create_module_list(
             module=Up,
             num_subnetworks=num_subnetworks,
-            in_channels=2 * filter_base_count + filter_base_count,
+            in_channels=2 * filter_base_count * num_subnetworks // self.factor + filter_base_count,
             out_channels=filter_base_count,
             bilinear=bilinear,
             use_pooling_indices=use_pooling_indices,
