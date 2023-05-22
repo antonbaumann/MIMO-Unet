@@ -162,10 +162,10 @@ def main(
             epistemic_vars=epistemic_vars,
             combined_vars=combined_vars,
         )
-
-        print(f"Saving dataframes for {dataset_name}...")
         df = compute_metrics(df)
-        df.to_csv(result_dir / f"{dataset_name}_metrics.csv", index=False)
+
+        # print(f"Saving dataframes for {dataset_name}...")
+        # df.to_csv(result_dir / f"{dataset_name}_metrics.csv.gz", index=False)
         
         df_cutoff = create_precision_recall_plot(df)
         df_cutoff.to_csv(result_dir / f"{dataset_name}_precision_recall.csv", index=False)
@@ -173,6 +173,7 @@ def main(
         df_calibration = create_calibration_plot(df, scipy.stats.norm)
         df_calibration.to_csv(result_dir / f"{dataset_name}_calibration.csv", index=False)
 
+        print(f"Finished processing dataset `{dataset_name}`!")
 
 if __name__ == "__main__":
     parser = ArgumentParser()
