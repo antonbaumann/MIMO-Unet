@@ -57,11 +57,11 @@ def make_predictions(model, dataset, batch_size: int = 32):
 
 def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars):
     data = np.stack([
-        y_preds.numpy().flatten().astype(np.float16),
-        y_trues.numpy().flatten().astype(np.float16), 
-        np.sqrt(aleatoric_vars.numpy()).flatten().astype(np.float16),
-        np.sqrt(epistemic_vars.numpy()).flatten().astype(np.float16),  
-        np.sqrt(combined_vars.numpy()).flatten().astype(np.float16),  
+        y_preds.numpy().flatten(),
+        y_trues.numpy().flatten(), 
+        np.sqrt(aleatoric_vars.numpy()).flatten(),
+        np.sqrt(epistemic_vars.numpy()).flatten(),  
+        np.sqrt(combined_vars.numpy()).flatten(),  
     ], axis=0).T
     
     df = pd.DataFrame(
