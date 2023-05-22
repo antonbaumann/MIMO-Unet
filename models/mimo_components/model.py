@@ -143,6 +143,8 @@ class SubnetworkDecoder(nn.Module):
     ) -> None:
         super(SubnetworkDecoder, self).__init__()
 
+        self.num_subnetworks = num_subnetworks
+
         self.up4s = create_module_list(
             module=Up,
             num_subnetworks=num_subnetworks,
@@ -172,10 +174,8 @@ class SubnetworkDecoder(nn.Module):
         x1s: List[torch.Tensor], 
         ind2s: List[torch.Tensor]
     ) -> torch.Tensor:
-        _, S, _, _, _ = x.shape
-
         logits = []
-        for i in range(S):
+        for i in range(self.num_subnetworks):
             x_i = self.up4s[i](x, x1s[i], ind2s[i])
             x_i = self.final_dropouts[i](x_i)
             logits.append(self.outcs[i](x_i))
