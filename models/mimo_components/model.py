@@ -9,7 +9,7 @@ from .components import Up, Down, DoubleConv, OutConv
 logger = logging.getLogger(__name__)
 
 
-def create_module_list(self, module: nn.Module, num_subnetworks: int, **kwargs):
+def create_module_list(module: nn.Module, num_subnetworks: int, **kwargs):
     return nn.ModuleList([module(**kwargs) for _ in range(num_subnetworks)])
 
 
