@@ -23,11 +23,6 @@ class DoubleConv(nn.Module):
             nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1, padding_mode="reflect", groups=groups),
             nn.BatchNorm2d(mid_channels),
             nn.ReLU(inplace=True),
-
-            # nn.Conv2d(mid_channels, mid_channels, kernel_size=3, padding=1, padding_mode="reflect", groups=groups),
-            # nn.BatchNorm2d(mid_channels),
-            # nn.ReLU(inplace=True),
-
             nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1, padding_mode="reflect", groups=groups),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
