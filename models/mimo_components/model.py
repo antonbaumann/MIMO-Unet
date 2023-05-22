@@ -25,16 +25,16 @@ class SubnetworkEncoder(nn.Module):
         super(SubnetworkEncoder, self).__init__()
         
         self.in_convs = create_module_list(
-            DoubleConv,
-            num_subnetworks,
+            module=DoubleConv,
+            num_subnetworks=num_subnetworks,
             in_channels=in_channels,
             out_channels=filter_base_count,
             dropout_rate=overall_dropout_rate,
         )
 
         self.down1s = create_module_list(
-            Down,
-            num_subnetworks,
+            module=Down,
+            num_subnetworks=num_subnetworks,
             in_channels=filter_base_count,
             out_channels=2 * filter_base_count,
             use_pooling_indices=use_pooling_indices,
