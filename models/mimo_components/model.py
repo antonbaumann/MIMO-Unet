@@ -124,10 +124,10 @@ class SubnetworkCore(nn.Module):
         x4, ind4 = self.down3(x3)
         x5, ind5 = self.down4(x4)
         x_drop = self.center_dropout(x5)
-        x = self.up1(x_drop, x4, ind5)
-        x = self.up2(x, x3, ind4)
-        x = self.up3(x, x, ind3)
-        return x
+        x_up = self.up1(x_drop, x4, ind5)
+        x_up = self.up2(x_up, x3, ind4)
+        x_up = self.up3(x_up, x, ind3)
+        return x_up
 
 
 class SubnetworkDecoder(nn.Module):
