@@ -1,18 +1,19 @@
 import torch
 
-def softmax_temperature(tensor, temperature=1.0):
+def softmax_temperature(x: torch.Tensor, temperature=1.0):
     """
     Apply the softmax function with temperature scaling to the input tensor.
 
-    :param tensor: Input tensor to apply softmax to.
-    :param temperature: Temperature scaling factor. Higher values make the output distribution more uniform.
-    :return: Softmax output tensor with temperature scaling.
+    Args:
+        tensor: Input tensor to apply softmax to.
+        temperature: Temperature scaling factor. Higher values make the output distribution more uniform.
+    Returns:
+        Softmax output tensor with temperature scaling.
     """
     assert temperature > 0, "Temperature should be positive."
 
     # Divide the input tensor by the temperature before applying softmax
-    scaled_tensor = tensor / temperature
-    return torch.nn.functional.softmax(scaled_tensor, dim=-1)
+    return torch.nn.functional.softmax(x / temperature, dim=-1)
 
 class LossBuffer:
     """
