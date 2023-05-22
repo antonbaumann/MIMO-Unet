@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from typing import Literal
 
 import pytorch_lightning as pl
 import torch
@@ -159,16 +160,22 @@ class MimoUnetModel(pl.LightningModule):
             self.log(f"train_loss_{subnetwork_idx}", loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
             self.log(f"train_weight_{subnetwork_idx}", weights[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
     
-    def log_metrics(self, y_hat, label_transformed):
+    def log_metrics(
+            self, 
+            y_hat, 
+            label_transformed,
+            stage: Literal["train", "val"] = "train",
+        ) -> None:
+        on_step = stage == "train"
         metric_dict = compute_regression_metrics(
             y_hat.flatten(),
             label_transformed.flatten(),
         )
         for name, value in metric_dict.items():
             self.log(
-                f"metric_train/{name}",
+                f"metric_{stage}/{name}",
                 value,
-                on_step=True,
+                on_step=on_step,
                 on_epoch=True,
                 metric_attribute=name,
                 batch_size=self.trainer.datamodule.batch_size,
@@ -228,20 +235,8 @@ class MimoUnetModel(pl.LightningModule):
         val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), combined_log_scale, y_mean, reduce_mean=True)
         self.log("val_loss_combined", val_loss_combined, batch_size=self.trainer.datamodule.batch_size)
 
-        metric_dict = compute_regression_metrics(
-            y_hat_mean.flatten(), 
-            y_mean.flatten(),
-        )
-        for name, value in metric_dict.items():
-            self.log(
-                f"metric_val/{name}",
-                value,
-                on_step=True,
-                on_epoch=True,
-                metric_attribute=name,
-                batch_size=self.trainer.datamodule.batch_size,
-            )
-
+        self.log_metrics(y_hat_mean, y_mean, stage="val")
+       
         return {
             "loss": val_loss.mean(),
             "label": y_mean,
