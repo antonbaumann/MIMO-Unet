@@ -109,24 +109,11 @@ class MimoUnetModel(pl.LightningModule):
         )
         return image_transformed, label_transformed
 
-    def _reshape_for_subnetwors(self, x: torch.Tensor, repeat: bool = False):
-        """
-        Args:
-            x: [B, C, H, W]
-        Returns:
-            x: [B // S, S, C, H, W]
-        """
-        B, C, H, W = x.shape
+    def _repeat_subnetworks(self, x: torch.Tensor, num_subnetworks: int):
+        x = x[:, None, :, :, :]
+        return x.repeat(1, num_subnetworks, 1, 1, 1)
 
-        # [B, C, H, W] -> [B // S, S, C, H, W]
-        if not repeat:
-            assert B % self.num_subnetworks == 0, "batch dimension must be divisible by num_subnetworks"
-            return x.view(B // self.num_subnetworks, self.num_subnetworks, C, H, W)
-        else:
-            x = x[:, None, :, :, :]
-            return x.repeat(1, self.num_subnetworks, 1, 1, 1)
-
-    def _reshape_for_plotting(self, x: torch.Tensor):
+    def _flatten_subnetwork_dimension(self, x: torch.Tensor):
         """
         Args:
             x: [B // S, S, C, H, W]
@@ -159,32 +146,24 @@ class MimoUnetModel(pl.LightningModule):
 
         return p1, p2
 
-    def training_step(self, batch, batch_idx):
-        image, label = batch["image"], batch["label"]
-        
-        image_transformed, label_transformed = self._apply_input_transform(image, label)
-
-        p1, p2 = self(image_transformed)
-
+    def calculate_loss(self, p1, p2, label_transformed):
         loss = self.loss_fn.forward(p1, p2, label_transformed, reduce_mean=False).mean(dim=(0, 2, 3, 4))
         weights = self.loss_buffer.get_weights().to(loss.device)
         loss_weighted = loss * weights
-
         self.loss_buffer.add(loss.detach())
-
-        y_hat = self.loss_fn.mode(p1, p2)
-        aleatoric_std = self.loss_fn.std(p1, p2)
-
+        return loss, loss_weighted, weights
+    
+    def log_loss_and_weights(self, loss, weights):
         self.log("train_loss", loss.mean(), batch_size=self.trainer.datamodule.batch_size)
         for subnetwork_idx in range(loss.shape[0]):
             self.log(f"train_loss_{subnetwork_idx}", loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
             self.log(f"train_weight_{subnetwork_idx}", weights[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
-
+    
+    def log_metrics(self, y_hat, label_transformed):
         metric_dict = compute_regression_metrics(
-            y_hat.flatten(), 
+            y_hat.flatten(),
             label_transformed.flatten(),
         )
-
         for name, value in metric_dict.items():
             self.log(
                 f"metric_train/{name}",
@@ -195,20 +174,34 @@ class MimoUnetModel(pl.LightningModule):
                 batch_size=self.trainer.datamodule.batch_size,
             )
 
+    def training_step(self, batch, batch_idx):
+        image, label = batch["image"], batch["label"]
+        
+        image_transformed, label_transformed = self._apply_input_transform(image, label)
+
+        p1, p2 = self(image_transformed)
+        y_hat = self.loss_fn.mode(p1, p2)
+        aleatoric_std = self.loss_fn.std(p1, p2)
+
+        loss, loss_weighted, weights = self.calculate_loss(p1, p2, label_transformed)
+
+        self.log_loss_and_weights(loss, weights)
+        self.log_metrics(y_hat, label_transformed)
+
         return {
             "loss": loss_weighted.mean(),
-            "label": self._reshape_for_plotting(label_transformed),
-            "preds": self._reshape_for_plotting(y_hat), 
-            "aleatoric_std_map": self._reshape_for_plotting(aleatoric_std), 
-            "err_map": self._reshape_for_plotting(y_hat - label_transformed),
+            "label": self._flatten_subnetwork_dimension(label_transformed),
+            "preds": self._flatten_subnetwork_dimension(y_hat), 
+            "aleatoric_std_map": self._flatten_subnetwork_dimension(aleatoric_std), 
+            "err_map": self._flatten_subnetwork_dimension(y_hat - label_transformed),
         }
     
     def validation_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
         mask = batch["mask"] if "mask" in batch else None
 
-        x = self._reshape_for_subnetwors(x, repeat=True)
-        y = self._reshape_for_subnetwors(y, repeat=True)
+        x = self._repeat_subnetworks(x, repeat=True)
+        y = self._repeat_subnetworks(y, repeat=True)
 
         p1, p2 = self(x)
 
