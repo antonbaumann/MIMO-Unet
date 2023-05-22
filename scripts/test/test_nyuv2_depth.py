@@ -59,9 +59,9 @@ def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined
     data = np.stack([
         y_preds.numpy().flatten().astype(np.float16),
         y_trues.numpy().flatten().astype(np.float16), 
-        np.sqrt(aleatoric_vars.numpy()).astype(np.float16),
-        np.sqrt(epistemic_vars.numpy()).astype(np.float16),  
-        np.sqrt(combined_vars.numpy()).astype(np.float16),  
+        np.sqrt(aleatoric_vars.numpy()).flatten().astype(np.float16),
+        np.sqrt(epistemic_vars.numpy()).flatten().astype(np.float16),  
+        np.sqrt(combined_vars.numpy()).flatten().astype(np.float16),  
     ], axis=0).T
     
     df = pd.DataFrame(
