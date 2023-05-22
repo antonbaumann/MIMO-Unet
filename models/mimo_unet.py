@@ -261,7 +261,11 @@ class MimoUnetModel(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, verbose=True)
-        return [optimizer], [scheduler]
+        return dict(
+            optimizer=optimizer,
+            lr_scheduler=scheduler,
+            monitor="val_loss",
+        )
     
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser):
