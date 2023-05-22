@@ -12,7 +12,89 @@ logger = logging.getLogger(__name__)
 def create_module_list(module: nn.Module, num_subnetworks: int, **kwargs):
     return nn.ModuleList([module(**kwargs) for _ in range(num_subnetworks)])
 
+class MimoUNet(nn.Module):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        num_subnetworks: int,
+        filter_base_count: int = 30,
+        center_dropout_rate: float = 0.0,
+        final_dropout_rate: float = 0.0,
+        overall_dropout_rate: float = 0.0,
+        bilinear: bool = True,
+        use_pooling_indices: bool = False,
+    ):
+        if overall_dropout_rate > 0.0 and (center_dropout_rate > 0.0 or final_dropout_rate > 0.0):
+            raise ValueError("Do not specify overall_dropout_rate together with center_dropout_rate or final_dropout_rate!")
+        
+        logger.info(
+            "Creating UNet with arguments: in_channels=%d, out_channels=%d, num_subnetworks=%d, bilinear=%s, filter_base_count=%d, "
+            "center_dropout_rate=%f, final_dropout_rate=%f, overall_dropout_rate=%f, use_pooling_indices=%s",
+            in_channels,
+            out_channels,
+            num_subnetworks,
+            bilinear,
+            filter_base_count,
+            center_dropout_rate,
+            final_dropout_rate,
+            overall_dropout_rate,
+            use_pooling_indices,
+        )
+        super(MimoUNet, self).__init__()
 
+        self.encoder = SubnetworkEncoder(
+            num_subnetworks=num_subnetworks,
+            in_channels=in_channels,
+            filter_base_count=filter_base_count,
+            overall_dropout_rate=overall_dropout_rate,
+            use_pooling_indices=use_pooling_indices,
+        )
+
+        self.core = SubnetworkCore(
+            num_subnetworks=num_subnetworks,
+            filter_base_count=filter_base_count,
+            overall_dropout_rate=overall_dropout_rate,
+            center_dropout_rate=center_dropout_rate,
+            bilinear=bilinear,
+            use_pooling_indices=use_pooling_indices,
+        )
+
+        self.decoder = SubnetworkDecoder(
+            num_subnetworks=num_subnetworks,
+            filter_base_count=filter_base_count,
+            overall_dropout_rate=overall_dropout_rate,
+            bilinear=bilinear,
+            use_pooling_indices=use_pooling_indices,
+            final_dropout_rate=final_dropout_rate,
+            out_channels=out_channels,
+        )
+
+    def forward(self, x):
+        """
+        Args:
+            x: [B, S, C_in, H, W]
+        Returns:
+            logits: [B, S, C_out, H, W]
+        
+        - B: batch size
+        - S: number of subnetworks
+        - C_in: number of input channels per subnetwork
+        - C_out: number of output channels per subnetwork
+        - H, W: image dimensions
+        """
+
+        _, S, _, _, _ = x.shape
+
+        x1s, x2s, ind2s = self.encoder(x)
+        
+        # concatenate along channel dimension
+        x2_concat = torch.cat(x2s, axis=1)
+
+        x = self.core(x2_concat)
+
+        return self.decoder(x, x1s, ind2s)
+    
 class SubnetworkEncoder(nn.Module):
     def __init__(
         self, 
@@ -182,87 +264,3 @@ class SubnetworkDecoder(nn.Module):
             logits.append(self.outcs[i](x_i))
         
         return torch.stack(logits, axis=1)
-
-
-class MimoUNet(nn.Module):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        num_subnetworks: int,
-        filter_base_count: int = 30,
-        center_dropout_rate: float = 0.0,
-        final_dropout_rate: float = 0.0,
-        overall_dropout_rate: float = 0.0,
-        bilinear: bool = True,
-        use_pooling_indices: bool = False,
-    ):
-        if overall_dropout_rate > 0.0 and (center_dropout_rate > 0.0 or final_dropout_rate > 0.0):
-            raise ValueError("Do not specify overall_dropout_rate together with center_dropout_rate or final_dropout_rate!")
-        
-        logger.info(
-            "Creating UNet with arguments: in_channels=%d, out_channels=%d, num_subnetworks=%d, bilinear=%s, filter_base_count=%d, "
-            "center_dropout_rate=%f, final_dropout_rate=%f, overall_dropout_rate=%f, use_pooling_indices=%s",
-            in_channels,
-            out_channels,
-            num_subnetworks,
-            bilinear,
-            filter_base_count,
-            center_dropout_rate,
-            final_dropout_rate,
-            overall_dropout_rate,
-            use_pooling_indices,
-        )
-        super(MimoUNet, self).__init__()
-
-        self.encoder = SubnetworkEncoder(
-            num_subnetworks=num_subnetworks,
-            in_channels=in_channels,
-            filter_base_count=filter_base_count,
-            overall_dropout_rate=overall_dropout_rate,
-            use_pooling_indices=use_pooling_indices,
-        )
-
-        self.core = SubnetworkCore(
-            num_subnetworks=num_subnetworks,
-            filter_base_count=filter_base_count,
-            overall_dropout_rate=overall_dropout_rate,
-            center_dropout_rate=center_dropout_rate,
-            bilinear=bilinear,
-            use_pooling_indices=use_pooling_indices,
-        )
-
-        self.decoder = SubnetworkDecoder(
-            num_subnetworks=num_subnetworks,
-            filter_base_count=filter_base_count,
-            overall_dropout_rate=overall_dropout_rate,
-            bilinear=bilinear,
-            use_pooling_indices=use_pooling_indices,
-            final_dropout_rate=final_dropout_rate,
-            out_channels=out_channels,
-        )
-
-    def forward(self, x):
-        """
-        Args:
-            x: [B, S, C_in, H, W]
-        Returns:
-            logits: [B, S, C_out, H, W]
-        
-        - B: batch size
-        - S: number of subnetworks
-        - C_in: number of input channels per subnetwork
-        - C_out: number of output channels per subnetwork
-        - H, W: image dimensions
-        """
-
-        _, S, _, _, _ = x.shape
-
-        x1s, x2s, ind2s = self.encoder(x)
-        
-        # concatenate along channel dimension
-        x2_concat = torch.cat(x2s, axis=1)
-
-        x = self.core(x2_concat)
-
-        return self.decoder(x, x1s, ind2s)
