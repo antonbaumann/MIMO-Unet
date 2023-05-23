@@ -69,11 +69,11 @@ class MimoUNet(nn.Module):
         self.decoder = SubnetworkDecoder(
             num_subnetworks=num_subnetworks,
             filter_base_count=filter_base_count,
+            out_channels=out_channels,
+            final_dropout_rate=final_dropout_rate,
             dropout_rate=decoder_dropout_rate,
             bilinear=bilinear,
             use_pooling_indices=use_pooling_indices,
-            final_dropout_rate=final_dropout_rate,
-            out_channels=out_channels,
         )
 
     def forward(self, x):
@@ -223,11 +223,11 @@ class SubnetworkDecoder(nn.Module):
         self,
         num_subnetworks: int,
         filter_base_count: int,
-        overall_dropout_rate: float,
+        out_channels: int,
+        final_dropout_rate: float,
+        dropout_rate: float,
         bilinear: bool,
         use_pooling_indices: bool,
-        final_dropout_rate: float,
-        out_channels: int
     ) -> None:
         super(SubnetworkDecoder, self).__init__()
 
@@ -241,7 +241,7 @@ class SubnetworkDecoder(nn.Module):
             out_channels=filter_base_count,
             bilinear=bilinear,
             use_pooling_indices=use_pooling_indices,
-            dropout_rate=overall_dropout_rate,
+            dropout_rate=dropout_rate,
         )
 
         self.final_dropouts = create_module_list(
