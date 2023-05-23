@@ -80,38 +80,6 @@ def run(
 
     for seed in [1, 2, 3]:
 
-        # mimo models (2 subnetworks)
-        for filter_base_count in [30, 45]:
-            for lb_size, lb_temp in [(0, 1), (10, 0.3)]:
-                for input_repetition_probability in [0.0, 0.2, 0.6]:
-                    configs.append(c.make_config(
-                        seed=seed,
-                        num_subnetworks=2,
-                        filter_base_count=filter_base_count,
-                        encoder_dropout_rate=0,
-                        core_dropout_rate=0,
-                        decoder_dropout_rate=0,
-                        loss_buffer_size=lb_size,
-                        loss_buffer_temperature=lb_temp,
-                        input_repetition_probability=input_repetition_probability,
-                    ))
-
-        # mimo models (3 subnetworks)
-        for filter_base_count in [30]:
-            for lb_size, lb_temp in [(0, 1), (10, 0.3)]:
-                for input_repetition_probability in [0.0, 0.2, 0.6]:
-                    configs.append(c.make_config(
-                        seed=seed,
-                        num_subnetworks=3,
-                        filter_base_count=filter_base_count,
-                        encoder_dropout_rate=0,
-                        core_dropout_rate=0,
-                        decoder_dropout_rate=0,
-                        loss_buffer_size=lb_size,
-                        loss_buffer_temperature=lb_temp,
-                        input_repetition_probability=input_repetition_probability,
-                    ))
-
         # mc dropout
         for filter_base_count in [30, 60]:
             configs.append(c.make_config(
