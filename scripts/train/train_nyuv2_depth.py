@@ -132,10 +132,12 @@ def main(params: NYUv2DepthParams):
         default_root_dir=params.checkpoint_path,
         log_every_n_steps=200,
         logger=wandb_logger,
+        quick_dev_run=True,
     )
 
     trainer.started_at = str(datetime.now().isoformat(timespec="seconds"))
     trainer.fit(model, dm)
+    wandb_logger.experiment.finish()
 
 
 if __name__ == "__main__":
