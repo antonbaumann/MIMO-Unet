@@ -37,6 +37,7 @@ def default_callbacks(validation: bool = True) -> List[pl.Callback]:
 
 @dataclass
 class NYUv2DepthParams:
+    project: str
     checkpoint_path: str
     seed: int
     max_epochs: int
@@ -65,6 +66,7 @@ class NYUv2DepthParams:
     def from_namespace(cls, args: Namespace) -> 'NYUv2DepthParams':
         return cls(
             # training parameters
+            project=args.project,
             checkpoint_path=args.checkpoint_path,
             seed=args.seed,
             max_epochs=args.max_epochs,
@@ -118,7 +120,7 @@ def main(params: NYUv2DepthParams):
         seed=params.seed,
     )
 
-    wandb_logger = WandbLogger(project="MIMO NYUv2Depth")
+    wandb_logger = WandbLogger(project=params.project, log_model=True, save_dir=params.checkpoint_path)
     wandb_logger.experiment.config.update(asdict(params))
 
     trainer = pl.Trainer(
@@ -139,6 +141,12 @@ def main(params: NYUv2DepthParams):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     parser = ArgumentParser()
+    parser.add_argument(
+        "--project",
+        type=str,
+        default="MIMO NYUv2Depth",
+        help="Specify the name of the project for wandb.",
+    )
     parser.add_argument(
         "--checkpoint_path", 
         type=dir_path, 
