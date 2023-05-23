@@ -1,5 +1,6 @@
 from typing import Optional
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser
+from dataclasses import dataclass
 import pytorch_lightning as pl
 import torch
 import os
@@ -75,44 +76,45 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
             drop_last=False,
             pin_memory=self.pin_memory,
         )
-
-
-def get_datamodule(args: Namespace) -> NYUv2DepthDataModule:
-    return NYUv2DepthDataModule(
-        dataset_dir=args.dataset_dir,
-        batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        pin_memory=args.pin_memory,
-    )
-
-def add_datamodule_args(parent_parser: ArgumentParser) -> ArgumentParser:
-    parser = parent_parser.add_argument_group(title="NYUv2DepthDataModule")
-
-    parser.add_argument(
-        "--dataset_dir",
-        type=dir_path,
-        default="/scratch/datasets/sen12tp-cropland-splitted/",
-    )
-
-    parser.add_argument(
-        "--batch_size",
-        type=int,
-        default=32,
-        help="Specify the batch size.",
-    )
     
-    parser.add_argument(
-        "--num_workers",
-        type=int,
-        default=32,
-        help="Specify the number of workers.",
-    )
+    @classmethod
+    def from_params(cls, params: dataclass) -> "NYUv2DepthDataModule":
+        return cls(
+            dataset_dir=params.dataset_dir,
+            batch_size=params.batch_size,
+            num_workers=params.num_workers,
+            pin_memory=params.pin_memory,
+        )
 
-    parser.add_argument(
-        "--pin_memory",
-        type=bool,
-        default=True,
-        help="Specify whether to pin memory.",
-    )
+    @staticmethod
+    def add_model_specific_args(parent_parser: ArgumentParser) -> ArgumentParser:
+        parser = parent_parser.add_argument_group(title="NYUv2DepthDataModule")
 
-    return parent_parser
+        parser.add_argument(
+            "--dataset_dir",
+            type=dir_path,
+            default="/scratch/datasets/sen12tp-cropland-splitted/",
+        )
+
+        parser.add_argument(
+            "--batch_size",
+            type=int,
+            default=32,
+            help="Specify the batch size.",
+        )
+        
+        parser.add_argument(
+            "--num_workers",
+            type=int,
+            default=32,
+            help="Specify the number of workers.",
+        )
+
+        parser.add_argument(
+            "--pin_memory",
+            type=bool,
+            default=True,
+            help="Specify whether to pin memory.",
+        )
+
+        return parent_parser

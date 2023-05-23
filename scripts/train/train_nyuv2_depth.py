@@ -1,6 +1,7 @@
 from typing import List
 from argparse import Namespace, ArgumentParser
 from datetime import datetime
+from dataclasses import dataclass, asdict
 import logging
 
 import pytorch_lightning as pl
@@ -9,7 +10,7 @@ from pytorch_lightning.loggers import WandbLogger
 
 from utils import dir_path
 from models.mimo_unet import MimoUnetModel
-from tasks.depth.nyuv2_datamodule import get_datamodule, add_datamodule_args
+from tasks.depth.nyuv2_datamodule import NYUv2DepthDataModule
 from tasks.depth.callbacks import OutputMonitor
 
 logger = logging.getLogger(__name__)
@@ -34,42 +35,99 @@ def default_callbacks(validation: bool = True) -> List[pl.Callback]:
     return callbacks
 
 
-def main(args: Namespace):
-    pl.seed_everything(args.seed)
+@dataclass
+class NYUv2DepthParams:
+    checkpoint_path: str
+    seed: int
+    max_epochs: int
 
-    dm = get_datamodule(args)
+    dataset_dir: str
+    batch_size: int
+    num_workers: int
+    pin_memory: bool
+
+    num_subnetworks: int
+    filter_base_count: int
+    center_dropout_rate: float
+    final_dropout_rate: float
+    encoder_dropout_rate: float
+    core_dropout_rate: float
+    decoder_dropout_rate: float
+    loss_buffer_size: int
+    loss_buffer_temperature: float
+    input_repetition_probability: float
+    batch_repetitions: int
+    loss: str
+    weight_decay: float
+    learning_rate: float
+
+    @classmethod
+    def from_namespace(cls, args: Namespace) -> 'NYUv2DepthParams':
+        return cls(
+            # training parameters
+            checkpoint_path=args.checkpoint_path,
+            seed=args.seed,
+            max_epochs=args.max_epochs,
+
+            # datamodule parameters
+            dataset_dir=args.dataset_dir,
+            batch_size=args.batch_size,
+            num_workers=args.num_workers,
+            pin_memory=args.pin_memory,
+
+            # model parameters
+            num_subnetworks=args.num_subnetworks,
+            filter_base_count=args.filter_base_count,
+            center_dropout_rate=args.center_dropout_rate,
+            final_dropout_rate=args.final_dropout_rate,
+            encoder_dropout_rate=args.encoder_dropout_rate,
+            core_dropout_rate=args.core_dropout_rate,
+            decoder_dropout_rate=args.decoder_dropout_rate,
+            loss_buffer_size=args.loss_buffer_size,
+            loss_buffer_temperature=args.loss_buffer_temperature,
+            input_repetition_probability=args.input_repetition_probability,
+            batch_repetitions=args.batch_repetitions,
+            loss=args.loss,
+            weight_decay=args.weight_decay,
+            learning_rate=args.learning_rate,
+        )
+
+
+def main(params: NYUv2DepthParams):
+    pl.seed_everything(params.seed)
+
+    dm = NYUv2DepthDataModule.from_params(params)
 
     model = MimoUnetModel(
         in_channels=3,
         out_channels=2,
-        num_subnetworks=args.num_subnetworks,
-        filter_base_count=args.filter_base_count,
-        center_dropout_rate=args.center_dropout_rate,
-        final_dropout_rate=args.final_dropout_rate,
-        encoder_dropout_rate=args.encoder_dropout_rate,
-        core_dropout_rate=args.core_dropout_rate,
-        decoder_dropout_rate=args.decoder_dropout_rate,
-        loss_buffer_size=args.loss_buffer_size,
-        loss_buffer_temperature=args.loss_buffer_temperature,
-        input_repetition_probability=args.input_repetition_probability,
-        batch_repetitions=args.batch_repetitions,
-        loss=args.loss,
-        weight_decay=args.weight_decay,
-        learning_rate=args.learning_rate,
-        seed=args.seed,
+        num_subnetworks=params.num_subnetworks,
+        filter_base_count=params.filter_base_count,
+        center_dropout_rate=params.center_dropout_rate,
+        final_dropout_rate=params.final_dropout_rate,
+        encoder_dropout_rate=params.encoder_dropout_rate,
+        core_dropout_rate=params.core_dropout_rate,
+        decoder_dropout_rate=params.decoder_dropout_rate,
+        loss_buffer_size=params.loss_buffer_size,
+        loss_buffer_temperature=params.loss_buffer_temperature,
+        input_repetition_probability=params.input_repetition_probability,
+        batch_repetitions=params.batch_repetitions,
+        loss=params.loss,
+        weight_decay=params.weight_decay,
+        learning_rate=params.learning_rate,
+        seed=params.seed,
     )
 
     wandb_logger = WandbLogger(project="MIMO NYUv2Depth")
-    wandb_logger.watch(model, log="all", log_freq=500)
-    wandb_logger.experiment.config.update(vars(args))
+    wandb_logger.experiment.config.update(asdict(params))
 
     trainer = pl.Trainer(
         callbacks=default_callbacks(), 
         accelerator='gpu', 
         devices=1,
         precision=16,
-        max_epochs=args.max_epochs,
-        default_root_dir=args.checkpoint_path,
+        max_epochs=params.max_epochs,
+        default_root_dir=params.checkpoint_path,
         log_every_n_steps=200,
         logger=wandb_logger,
     )
@@ -98,8 +156,10 @@ if __name__ == "__main__":
         default=100,
         help="Specify the maximum number of epochs to train.",
     )
-    parser = add_datamodule_args(parser)
+    parser = NYUv2DepthDataModule.add_model_specific_args(parser)
     parser = MimoUnetModel.add_model_specific_args(parser)
     args = parser.parse_args()
-    logger.debug("command line arguments: %s", args)
-    main(args)  
+
+    params = NYUv2DepthParams.from_namespace(args)
+    logger.debug("command line arguments: %s", params)
+    main(params)
