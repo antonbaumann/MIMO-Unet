@@ -21,16 +21,20 @@ class MimoUNet(nn.Module):
         filter_base_count: int = 30,
         center_dropout_rate: float = 0.0,
         final_dropout_rate: float = 0.0,
-        overall_dropout_rate: float = 0.0,
+        encoder_dropout_rate: float = 0.0,
+        core_dropout_rate: float = 0.0,
+        decoder_dropout_rate: float = 0.0,
         bilinear: bool = True,
         use_pooling_indices: bool = False,
     ):
-        if overall_dropout_rate > 0.0 and (center_dropout_rate > 0.0 or final_dropout_rate > 0.0):
-            raise ValueError("Do not specify overall_dropout_rate together with center_dropout_rate or final_dropout_rate!")
+        if (encoder_dropout_rate > 0.0 or core_dropout_rate > 0.0 or decoder_dropout_rate > 0.0) and (center_dropout_rate > 0.0 or final_dropout_rate > 0.0):
+            raise ValueError("Do not specify spatial_dropout together with center_dropout_rate or final_dropout_rate!")
         
         logger.info(
             "Creating UNet with arguments: in_channels=%d, out_channels=%d, num_subnetworks=%d, bilinear=%s, filter_base_count=%d, "
-            "center_dropout_rate=%f, final_dropout_rate=%f, overall_dropout_rate=%f, use_pooling_indices=%s",
+            "center_dropout_rate=%f, final_dropout_rate=%f, "
+            "encoder_dropout_rate=%f, core_dropout_rate=%f, decoder_dropout_rate=%f, "
+            "use_pooling_indices=%s",
             in_channels,
             out_channels,
             num_subnetworks,
@@ -38,7 +42,9 @@ class MimoUNet(nn.Module):
             filter_base_count,
             center_dropout_rate,
             final_dropout_rate,
-            overall_dropout_rate,
+            encoder_dropout_rate,
+            core_dropout_rate,
+            decoder_dropout_rate,
             use_pooling_indices,
         )
         super(MimoUNet, self).__init__()
@@ -47,14 +53,14 @@ class MimoUNet(nn.Module):
             num_subnetworks=num_subnetworks,
             in_channels=in_channels,
             filter_base_count=filter_base_count,
-            overall_dropout_rate=overall_dropout_rate,
+            dropout_rate=encoder_dropout_rate,
             use_pooling_indices=use_pooling_indices,
         )
 
         self.core = SubnetworkCore(
             num_subnetworks=num_subnetworks,
             filter_base_count=filter_base_count,
-            overall_dropout_rate=overall_dropout_rate,
+            dropout_rate=core_dropout_rate,
             center_dropout_rate=center_dropout_rate,
             bilinear=bilinear,
             use_pooling_indices=use_pooling_indices,
@@ -63,7 +69,7 @@ class MimoUNet(nn.Module):
         self.decoder = SubnetworkDecoder(
             num_subnetworks=num_subnetworks,
             filter_base_count=filter_base_count,
-            overall_dropout_rate=overall_dropout_rate,
+            dropout_rate=decoder_dropout_rate,
             bilinear=bilinear,
             use_pooling_indices=use_pooling_indices,
             final_dropout_rate=final_dropout_rate,
@@ -101,7 +107,7 @@ class SubnetworkEncoder(nn.Module):
         num_subnetworks: int, 
         in_channels: int, 
         filter_base_count: int, 
-        overall_dropout_rate: float, 
+        dropout_rate: float, 
         use_pooling_indices: bool
     ) -> None:
         super(SubnetworkEncoder, self).__init__()
@@ -111,7 +117,7 @@ class SubnetworkEncoder(nn.Module):
             num_subnetworks=num_subnetworks,
             in_channels=in_channels,
             out_channels=filter_base_count,
-            dropout_rate=overall_dropout_rate,
+            dropout_rate=dropout_rate,
         )
 
         self.down1s = create_module_list(
@@ -120,7 +126,7 @@ class SubnetworkEncoder(nn.Module):
             in_channels=filter_base_count,
             out_channels=2 * filter_base_count,
             use_pooling_indices=use_pooling_indices,
-            dropout_rate=overall_dropout_rate,
+            dropout_rate=dropout_rate,
         )
 
     def forward(
@@ -149,7 +155,7 @@ class SubnetworkCore(nn.Module):
         self, 
         num_subnetworks: int, 
         filter_base_count: int, 
-        overall_dropout_rate: float, 
+        dropout_rate: float, 
         center_dropout_rate: float, 
         bilinear: bool,
         use_pooling_indices: bool,
@@ -160,20 +166,20 @@ class SubnetworkCore(nn.Module):
             in_channels=2 * filter_base_count * num_subnetworks, 
             out_channels=4 * filter_base_count * num_subnetworks,
             use_pooling_indices=use_pooling_indices,
-            dropout_rate=overall_dropout_rate,
+            dropout_rate=dropout_rate,
         )
         self.down3 = Down(
             in_channels=4 * filter_base_count * num_subnetworks, 
             out_channels=8 * filter_base_count * num_subnetworks,
             use_pooling_indices=use_pooling_indices,
-            dropout_rate=overall_dropout_rate,
+            dropout_rate=dropout_rate,
         )
         self.factor = 2 if (bilinear or use_pooling_indices) else 1
         self.down4 = Down(
             in_channels=8 * filter_base_count * num_subnetworks, 
             out_channels=16 * filter_base_count * num_subnetworks // self.factor, 
             use_pooling_indices=use_pooling_indices,
-            dropout_rate=overall_dropout_rate,
+            dropout_rate=dropout_rate,
         )
         self.center_dropout = nn.Dropout(p=center_dropout_rate)
         self.up1 = Up(
@@ -181,21 +187,21 @@ class SubnetworkCore(nn.Module):
             out_channels=8 * filter_base_count * num_subnetworks // self.factor, 
             bilinear=bilinear, 
             use_pooling_indices=use_pooling_indices,
-            dropout_rate=overall_dropout_rate,
+            dropout_rate=dropout_rate,
         )
         self.up2 = Up(
             in_channels=8 * filter_base_count * num_subnetworks, 
             out_channels=4 * filter_base_count * num_subnetworks // self.factor, 
             bilinear=bilinear, 
             use_pooling_indices=use_pooling_indices,
-            dropout_rate=overall_dropout_rate,
+            dropout_rate=dropout_rate,
         )
         self.up3 = Up(
             in_channels=4 * filter_base_count * num_subnetworks, 
             out_channels=2 * filter_base_count * num_subnetworks // self.factor, 
             bilinear=bilinear, 
             use_pooling_indices=use_pooling_indices,
-            dropout_rate=overall_dropout_rate,
+            dropout_rate=dropout_rate,
         )
 
     def forward(

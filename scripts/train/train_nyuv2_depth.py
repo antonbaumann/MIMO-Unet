@@ -46,7 +46,9 @@ def main(args: Namespace):
         filter_base_count=args.filter_base_count,
         center_dropout_rate=args.center_dropout_rate,
         final_dropout_rate=args.final_dropout_rate,
-        overall_dropout_rate=args.overall_dropout_rate,
+        encoder_dropout_rate=args.encoder_dropout_rate,
+        core_dropout_rate=args.core_dropout_rate,
+        decoder_dropout_rate=args.decoder_dropout_rate,
         loss_buffer_size=args.loss_buffer_size,
         loss_buffer_temperature=args.loss_buffer_temperature,
         input_repetition_probability=args.input_repetition_probability,
@@ -65,10 +67,10 @@ def main(args: Namespace):
         callbacks=default_callbacks(), 
         accelerator='gpu', 
         devices=1,
-        precision=32,
+        precision=16,
         max_epochs=args.max_epochs,
         default_root_dir=args.checkpoint_path,
-        log_every_n_steps=100,
+        log_every_n_steps=200,
         logger=wandb_logger,
     )
 
