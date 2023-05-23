@@ -24,10 +24,21 @@ class EnsembleModule(pl.LightningModule):
         # todo: check if all models have same loss_fn
         self.loss_fn = self.models[0].loss_fn
             
-    def _activate_mc_dropout(self, model):
-        for module in model.modules():
-            if module.__class__.__name__.startswith('Dropout'):
-                module.train()
+    @staticmethod
+    def _activate_mc_dropout(module: torch.nn.Module):
+        """
+        Activates MC Dropout for all Dropout layers in the given module.
+        Recursively iterates through all submodules.
+
+        Args:
+            module: Module to activate MC Dropout for.
+        """
+        for submodule in module.modules():
+            if submodule.__class__.__name__.startswith('Dropout'):
+                submodule.train()
+                print(f"Activated MC Dropout for {submodule}")
+            elif len(list(submodule.modules())) > 1: 
+                EnsembleModule._activate_mc_dropout(submodule)
         
     @property
     def num_subnetworks(self):
@@ -35,6 +46,9 @@ class EnsembleModule(pl.LightningModule):
         
     def forward(self, x: torch.Tensor):
         """
+        Performs a forward pass through all subnetworks of all models.
+        Performs Monte Carlo forward passes if self.monte_carlo_steps > 0.
+        
         Args:
             x: [B, C_in, H, W]
         Returns:

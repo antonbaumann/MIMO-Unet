@@ -32,7 +32,7 @@ def make_predictions(model, dataset, batch_size: int = 32):
         log_params.append(log_param)
 
     y_preds = torch.cat(y_preds, dim=0).clip(min=0, max=1)
-    y_trues = torch.cat(y_trues, dim=0)
+    y_trues = torch.cat(y_trues, dim=0).clip(min=0, max=1)
     log_params = torch.cat(log_params, dim=0)
     
     aleatoric_var, epistemic_var = compute_uncertainties(

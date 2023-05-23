@@ -25,7 +25,7 @@ def default_callbacks(validation: bool = True) -> List[pl.Callback]:
         callbacks_validation = [
             ModelCheckpoint(
                 monitor="val_loss",
-                save_top_k=5,
+                save_top_k=2,
                 filename="epoch-{epoch}-step-{step}-valloss-{val_loss:.8f}-mae-{metric_val/mae_epoch:.8f}",
                 auto_insert_metric_name=False,
             ),
