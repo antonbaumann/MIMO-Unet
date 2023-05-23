@@ -128,11 +128,10 @@ def main(params: NYUv2DepthParams):
         accelerator='gpu', 
         devices=1,
         precision=16,
-        max_epochs=params.max_epochs,
+        max_epochs=1,
         default_root_dir=params.checkpoint_path,
         log_every_n_steps=200,
         logger=wandb_logger,
-        quick_dev_run=True,
     )
 
     trainer.started_at = str(datetime.now().isoformat(timespec="seconds"))
