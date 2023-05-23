@@ -26,7 +26,7 @@ def default_callbacks(validation: bool = True) -> List[pl.Callback]:
         callbacks_validation = [
             ModelCheckpoint(
                 monitor="val_loss",
-                save_top_k=2,
+                save_top_k=1,
                 filename="epoch-{epoch}-step-{step}-valloss-{val_loss:.8f}-mae-{metric_val/mae_epoch:.8f}",
                 auto_insert_metric_name=False,
             ),
@@ -129,7 +129,7 @@ def main(params: NYUv2DepthParams):
         accelerator='gpu', 
         devices=1,
         precision=16,
-        max_epochs=1,
+        max_epochs=100,
         default_root_dir=params.checkpoint_path,
         log_every_n_steps=200,
         logger=wandb_logger,
