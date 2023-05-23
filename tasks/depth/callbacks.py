@@ -9,7 +9,7 @@ import numpy as np
 
 
 class WandbMetricsDefiner(pl.Callback):
-    def on_fit_start(trainer, pl_module):
+    def on_fit_start(self, trainer, pl_module):
         wandb.define_metric('metric_val/r2', summary='max')
         wandb.define_metric('metric_val/mae', summary='min')
         wandb.define_metric('metric_val/mse', summary='min')
