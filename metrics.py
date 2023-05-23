@@ -19,7 +19,7 @@ def get_metric(metric: str):
 def compute_regression_metrics(
     y_hat: torch.Tensor, 
     y: torch.Tensor, 
-    metrics: Optional[List[str]] = ['r2', 'mae', 'mse', 'mape'],
+    metrics: Optional[List[str]] = ['r2', 'mae', 'mse'],
 ) -> Dict[str, float]:
     y = y.detach()
     y_hat = y_hat.detach()

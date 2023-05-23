@@ -11,7 +11,7 @@ from pytorch_lightning.loggers import WandbLogger
 from utils import dir_path
 from models.mimo_unet import MimoUnetModel
 from tasks.depth.nyuv2_datamodule import NYUv2DepthDataModule
-from tasks.depth.callbacks import OutputMonitor
+from tasks.depth.callbacks import OutputMonitor, WandbMetricsDefiner
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -30,6 +30,7 @@ def default_callbacks(validation: bool = True) -> List[pl.Callback]:
                 filename="epoch-{epoch}-step-{step}-valloss-{val_loss:.8f}-mae-{metric_val/mae_epoch:.8f}",
                 auto_insert_metric_name=False,
             ),
+            WandbMetricsDefiner(),
         ]
         callbacks += callbacks_validation
     return callbacks

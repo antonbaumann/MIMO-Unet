@@ -76,6 +76,7 @@ def main(args: Namespace):
 
     trainer.started_at = str(datetime.now().isoformat(timespec="seconds"))
     trainer.fit(model, dm)
+    wandb_logger.experiment.finish()
 
 
 if __name__ == "__main__":

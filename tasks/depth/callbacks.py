@@ -8,6 +8,12 @@ from visualization import colorize
 import numpy as np
 
 
+class WandbMetricsDefiner(pl.Callback):
+    def on_fit_start(trainer, pl_module):
+        wandb.define_metric('metric_val/r2', summary='max')
+        wandb.define_metric('metric_val/mae', summary='min')
+        wandb.define_metric('metric_val/mse', summary='min')
+
 class OutputMonitor(pl.Callback):
     """Log the prediction of the model."""
 
