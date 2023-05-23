@@ -71,6 +71,7 @@ def run(
         project=project,
         checkpoint_path=checkpoint_path,
         max_epochs=100,
+        batch_size=32,
         dataset_dir=dataset_dir,
         num_workers=num_workers,
     )
