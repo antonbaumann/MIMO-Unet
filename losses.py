@@ -2,19 +2,23 @@ import torch
 from abc import ABC, abstractmethod
 
 class UncertaintyLoss(torch.nn.Module, ABC):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
     
     @abstractmethod
-    def forward(self, y_hat, log_variance, y, mask):
+    def forward(self, y_hat, log_variance, y, mask) -> torch.Tensor:
         pass
 
     @abstractmethod
-    def std(self, mu, log_variance):
+    def std(self, mu, log_variance) -> torch.Tensor:
         pass
 
     @abstractmethod
-    def mode(self, mu, log_variance):
+    def mode(self, mu, log_variance) -> torch.Tensor:
+        pass
+
+    @abstractmethod
+    def calculate_dist_param(self, std: torch.Tensor, *, log: bool = False) -> torch.Tensor:
         pass
 
     @classmethod
@@ -38,6 +42,7 @@ class GaussianNLL(UncertaintyLoss):
         y_hat: torch.tensor, 
         log_variance: torch.tensor, 
         y: torch.tensor,
+        *,
         mask: torch.tensor = None,
         reduce_mean: bool = True,
     ):
@@ -52,7 +57,6 @@ class GaussianNLL(UncertaintyLoss):
             Negative log-likelihood for a Gaussian distribution
         """
         diff = y_hat - y
-        diff[~torch.isfinite(diff)] = 0.0
 
         variance = torch.exp(log_variance).clone()
         with torch.no_grad():
@@ -70,17 +74,44 @@ class GaussianNLL(UncertaintyLoss):
 
     def std(
         self, 
-        mu: torch.tensor, 
-        log_variance: torch.tensor
+        mu: torch.Tensor, 
+        log_variance: torch.Tensor
     ):
         return torch.exp(log_variance) ** 0.5
 
     def mode(
         self, 
-        mu: torch.tensor, 
-        log_variance: torch.tensor,
+        mu: torch.Tensor, 
+        log_variance: torch.Tensor,
     ):
         return mu
+    
+    def calculate_dist_param(
+        self, 
+        std: torch.Tensor,
+        *,
+        log: bool = False,
+    ):
+        """
+        Calculate the distribution parameter based on the provided standard deviation.
+
+        Args:
+            std: The tensor containing the standard deviation values.
+            log: If set to True, return the natural logarithm of the calculated parameter.
+
+        Returns:
+            A tensor with the calculated distribution parameter.
+        """
+        param = std ** 2
+        param = param.clone()
+
+        with torch.no_grad():
+            param.clamp_(min=self.eps_min, max=self.eps_max)
+
+        if log:
+            param = torch.log(param)
+
+        return param
 
 
 class LaplaceNLL(UncertaintyLoss):
@@ -91,10 +122,11 @@ class LaplaceNLL(UncertaintyLoss):
         
     def forward(
         self, 
-        y_hat: torch.tensor, 
-        log_scale: torch.tensor, 
-        y: torch.tensor,
-        mask: torch.tensor = None,
+        y_hat: torch.Tensor, 
+        log_scale: torch.Tensor, 
+        y: torch.Tensor,
+        *,
+        mask: torch.Tensor = None,
         reduce_mean: bool = True,
     ):
         """Negative log-likelihood for a Laplace distribution.
@@ -127,3 +159,25 @@ class LaplaceNLL(UncertaintyLoss):
 
     def mode(self, mu, log_scale):
         return mu
+    
+    def calculate_dist_param(self, std: torch.Tensor, *, log: bool = False) -> torch.Tensor:
+        """
+        Calculate the distribution parameter based on the provided standard deviation.
+
+        Args:
+            std: The tensor containing the standard deviation values.
+            log: If set to True, return the natural logarithm of the calculated parameter.
+
+        Returns:
+            A tensor with the calculated distribution parameter.
+        """
+        param = std / (2 ** 0.5)
+        param = param.clone()
+
+        with torch.no_grad():
+            param.clamp_(min=self.eps_min, max=self.eps_max)
+
+        if log:
+            param = torch.log(param)
+
+        return param

@@ -137,20 +137,13 @@ class MimoUnetModel(pl.LightningModule):
         y_hat_mean = y_hat.mean(dim=1, keepdim=True)
         y_mean = y.mean(dim=1)
 
-        if self.num_subnetworks == 1:
-            epistemic_std = torch.zeros_like(aleatoric_std)
-        else:
-            epistemic_std = (torch.sum((y_hat - y_hat_mean) ** 2, dim=1) * (1 / (self.num_subnetworks - 1))) ** 0.5
-
-        self.log("val_loss", val_loss.mean(), batch_size=self.trainer.datamodule.batch_size)
-        for subnetwork_idx in range(val_loss.shape[0]):
-            self.log(f"val_loss_{subnetwork_idx}", val_loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
-
+        epistemic_std = self._compute_epistemic_std(y_hat)
         combined_std = (aleatoric_std ** 2 + epistemic_std ** 2) ** 0.5
-        combined_log_scale = torch.log(combined_std / (2 ** 0.5))
-        val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), combined_log_scale, y_mean, reduce_mean=True)
-        self.log("val_loss_combined", val_loss_combined, batch_size=self.trainer.datamodule.batch_size)
+        combined_log_scale = self.loss_fn.calculate_dist_param(std=combined_std, log=True)
 
+        val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), combined_log_scale, y_mean, reduce_mean=True)
+
+        self._log_val_loss(val_loss, val_loss_combined)
         self._log_metrics(y_hat_mean, y_mean, stage="val")
        
         return {
@@ -171,6 +164,24 @@ class MimoUnetModel(pl.LightningModule):
             lr_scheduler=scheduler,
             monitor="val_loss",
         )
+
+    @staticmethod
+    def _compute_epistemic_std(y_hat: torch.Tensor) -> torch.Tensor:
+        """
+        Args:
+            y_hat: [B, S, C, H, W]
+        Returns:
+            [B, C, H, W]
+        """
+        B, S, C, H, W = y_hat.shape
+
+        if S == 1:
+            return torch.zeros((B, C, H, W), device=y_hat.device)
+        
+        y_hat_mean = y_hat.mean(dim=1, keepdim=True)
+        normalizing_const = 1 / (S - 1)
+        variance = torch.sum((y_hat - y_hat_mean) ** 2, dim=1) * normalizing_const
+        return variance ** 0.5
 
     def _apply_input_transform(
             self, 
@@ -254,6 +265,12 @@ class MimoUnetModel(pl.LightningModule):
                 metric_attribute=name,
                 batch_size=self.trainer.datamodule.batch_size,
             )
+    
+    def _log_val_loss(self, val_loss, val_loss_combined):
+        self.log("val_loss", val_loss.mean(), batch_size=self.trainer.datamodule.batch_size)
+        for subnetwork_idx in range(val_loss.shape[0]):
+            self.log(f"val_loss_{subnetwork_idx}", val_loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
+        self.log("val_loss_combined", val_loss_combined, batch_size=self.trainer.datamodule.batch_size)
     
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser):
