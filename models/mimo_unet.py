@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from typing import Literal
+from typing import Literal, Dict, Tuple, Any
 
 import pytorch_lightning as pl
 import torch
@@ -97,29 +97,30 @@ class MimoUnetModel(pl.LightningModule):
 
         return p1, p2
     
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> Dict[str, torch.Tensor]:
         image, label = batch["image"], batch["label"]
+        mask = batch["mask"] if "mask" in batch else None
         
         image_transformed, label_transformed = self._apply_input_transform(image, label)
 
         p1, p2 = self(image_transformed)
-        y_hat = self.loss_fn.mode(p1, p2)
+        y_pred = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2)
 
-        loss, loss_weighted, weights = self._calculate_train_loss(p1, p2, label_transformed)
+        loss, loss_weighted, weights = self._calculate_train_loss(p1, p2, y_true=label_transformed, mask=mask)
 
         self._log_train_loss_and_weights(loss, weights)
-        self._log_metrics(y_hat, label_transformed)
+        self._log_metrics(y_pred=y_pred, y_true=label_transformed, stage="train")
 
         return {
             "loss": loss_weighted.mean(),
             "label": self._flatten_subnetwork_dimension(label_transformed),
-            "preds": self._flatten_subnetwork_dimension(y_hat), 
+            "preds": self._flatten_subnetwork_dimension(y_pred), 
             "aleatoric_std_map": self._flatten_subnetwork_dimension(aleatoric_std), 
-            "err_map": self._flatten_subnetwork_dimension(y_hat - label_transformed),
+            "err_map": self._flatten_subnetwork_dimension(y_pred - label_transformed),
         }
     
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> Dict[str, torch.Tensor]:
         x, y = batch["image"], batch["label"]
         mask = batch["mask"] if "mask" in batch else None
 
@@ -132,32 +133,31 @@ class MimoUnetModel(pl.LightningModule):
         val_loss = self.loss_fn.forward(p1, p2, y, mask=mask, reduce_mean=False).mean(dim=(0, 2, 3, 4))
 
         # [B, S, 1, H, W]
-        y_hat = self.loss_fn.mode(p1, p2)
+        y_pred = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2).mean(dim=1)
-        y_hat_mean = y_hat.mean(dim=1, keepdim=True)
+        y_pred_mean = y_pred.mean(dim=1, keepdim=True)
         y_mean = y.mean(dim=1)
 
-        epistemic_std = self._compute_epistemic_std(y_hat)
+        epistemic_std = self._compute_epistemic_std(y_pred)
         combined_std = (aleatoric_std ** 2 + epistemic_std ** 2) ** 0.5
         combined_log_scale = self.loss_fn.calculate_dist_param(std=combined_std, log=True)
 
         val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), combined_log_scale, y_mean, reduce_mean=True)
 
         self._log_val_loss(val_loss, val_loss_combined)
-        self._log_metrics(y_hat_mean, y_mean, stage="val")
+        self._log_metrics(y_pred=y_pred_mean, y_true=y_mean, stage="val")
        
         return {
             "loss": val_loss.mean(),
             "label": y_mean,
-            "preds": y_hat_mean.squeeze(dim=1), 
+            "preds": y_pred_mean.squeeze(dim=1), 
             "aleatoric_std_map": aleatoric_std, 
             "epistemic_std_map": epistemic_std,
-            "err_map": y_hat_mean.squeeze(dim=1) - y_mean,
+            "err_map": y_pred_mean.squeeze(dim=1) - y_mean,
         }
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> Dict[str, Any]:
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
-        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, verbose=True)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=12, gamma=0.5, verbose=True)
         return dict(
             optimizer=optimizer,
@@ -168,6 +168,8 @@ class MimoUnetModel(pl.LightningModule):
     @staticmethod
     def _compute_epistemic_std(y_hat: torch.Tensor) -> torch.Tensor:
         """
+        Compute the epistemic uncertainty from a set of predictions.
+
         Args:
             y_hat: [B, S, C, H, W]
         Returns:
@@ -189,6 +191,10 @@ class MimoUnetModel(pl.LightningModule):
             label: torch.Tensor,
         ):
         """
+        Apply input transformations to the input data.
+        - batch repetition
+        - input repetition
+
         Args:
             image: [B, C_image, H, W]
             label: [B, C_label, H, W]
@@ -218,11 +224,21 @@ class MimoUnetModel(pl.LightningModule):
         return image_transformed, label_transformed
 
     def _repeat_subnetworks(self, x: torch.Tensor):
+        """
+        Repeat the input tensor along the subnetwork dimension.
+
+        Args:
+            x: [B, C, H, W]
+        Returns:
+            x: [B, S, C, H, W]
+        """
         x = x[:, None, :, :, :]
         return x.repeat(1, self.num_subnetworks, 1, 1, 1)
 
     def _flatten_subnetwork_dimension(self, x: torch.Tensor):
         """
+        Collapse the subnetwork dimension into the batch dimension.
+
         Args:
             x: [B // S, S, C, H, W]
         Returns:
@@ -232,14 +248,30 @@ class MimoUnetModel(pl.LightningModule):
         # [B // S, S, C, H, W] -> [B, C, H, W]
         return x.view(B_ * S, C, H, W)
 
-    def _calculate_train_loss(self, p1, p2, label_transformed):
-        loss = self.loss_fn.forward(p1, p2, label_transformed, reduce_mean=False).mean(dim=(0, 2, 3, 4))
+    def _calculate_train_loss(
+            self, 
+            p1: torch.Tensor, 
+            p2: torch.Tensor, 
+            y_true: torch.Tensor,
+            mask: torch.Tensor = None,
+        ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Calculate the (weighted) training loss.
+        Args:
+            p1: [B, S, C, H, W]
+            p2: [B, S, C, H, W]
+            y_true: [B, S, C, H, W]
+        Returns:
+            loss, loss_weighted, weights: [S, ], [S, ], [S, ]
+        """
+
+        loss = self.loss_fn.forward(p1, p2, y_true, reduce_mean=False, mask=mask).mean(dim=(0, 2, 3, 4))
         weights = self.loss_buffer.get_weights().to(loss.device)
         loss_weighted = loss * weights
         self.loss_buffer.add(loss.detach())
         return loss, loss_weighted, weights
     
-    def _log_train_loss_and_weights(self, loss, weights):
+    def _log_train_loss_and_weights(self, loss: torch.Tensor, weights: torch.Tensor) -> None:
         self.log("train_loss", loss.mean(), batch_size=self.trainer.datamodule.batch_size)
         for subnetwork_idx in range(loss.shape[0]):
             self.log(f"train_loss_{subnetwork_idx}", loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
@@ -247,14 +279,21 @@ class MimoUnetModel(pl.LightningModule):
     
     def _log_metrics(
             self, 
-            y_hat, 
-            label_transformed,
+            y_pred: torch.Tensor, 
+            y_true: torch.Tensor,
             stage: Literal["train", "val"] = "train",
         ) -> None:
+        """
+        Log the metrics for the given stage.
+        Args:
+            y_pred: [B, C, H, W]
+            y_true: [B, C, H, W]
+            stage: "train" or "val"
+        """
         on_step = stage == "train"
         metric_dict = compute_regression_metrics(
-            y_hat.flatten(),
-            label_transformed.flatten(),
+            y_pred.flatten(),
+            y_true.flatten(),
         )
         for name, value in metric_dict.items():
             self.log(
@@ -266,14 +305,14 @@ class MimoUnetModel(pl.LightningModule):
                 batch_size=self.trainer.datamodule.batch_size,
             )
     
-    def _log_val_loss(self, val_loss, val_loss_combined):
+    def _log_val_loss(self, val_loss: torch.Tensor, val_loss_combined: torch.Tensor) -> None:
         self.log("val_loss", val_loss.mean(), batch_size=self.trainer.datamodule.batch_size)
         for subnetwork_idx in range(val_loss.shape[0]):
             self.log(f"val_loss_{subnetwork_idx}", val_loss[subnetwork_idx], batch_size=self.trainer.datamodule.batch_size)
         self.log("val_loss_combined", val_loss_combined, batch_size=self.trainer.datamodule.batch_size)
     
     @staticmethod
-    def add_model_specific_args(parent_parser: ArgumentParser):
+    def add_model_specific_args(parent_parser: ArgumentParser) -> ArgumentParser:
         parser = parent_parser.add_argument_group(title="MIMO UNet Model")
         
         parser.add_argument("--num_subnetworks", type=int, default=3)
