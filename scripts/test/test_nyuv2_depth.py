@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import os
+import multiprocessing as mp
+from functools import partial
 
 from models.ensemble import EnsembleModule
 from datasets.nyuv2 import NYUv2DepthDataset
@@ -108,10 +110,17 @@ def create_precision_recall_plot(df: pd.DataFrame) -> pd.DataFrame:
     return df_cutoff
 
 
+def calculate_observed_p(p, df, distribution):
+    ppf = distribution.ppf(p, loc=df['y_pred'], scale=df['aleatoric_std'] / np.sqrt(2))
+    return (df['y_true'] < ppf).mean()
+
 def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
-    expected_p = np.arange(41)/40.
-    ppf = distribution.ppf(expected_p[:, None], loc=df['y_pred'], scale=df['aleatoric_std'] / np.sqrt(2))
-    observed_p = (df['y_true'].values < ppf).mean(axis=1)
+    expected_p = np.arange(41) / 40.
+
+    with mp.Pool(mp.cpu_count()) as pool:
+        calculate_with_args = partial(calculate_observed_p, df=df, distribution=distribution)
+        observed_p = pool.map(calculate_with_args, expected_p)
+
     df_calibration = pd.DataFrame({'Expected Conf.': expected_p, 'Observed Conf.': observed_p})
     return df_calibration
 
