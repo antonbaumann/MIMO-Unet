@@ -111,22 +111,17 @@ def create_precision_recall_plot(df: pd.DataFrame) -> pd.DataFrame:
     return df_cutoff
 
 
-def calculate_observed_p(p, df, distribution):
-    ppf = distribution.ppf(p, loc=df['y_pred'], scale=df['aleatoric_std'] / np.sqrt(2))
-    return (df['y_true'] < ppf).mean()
-
 def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
-    expected_p = np.arange(41) / 40.
-
-    with mp.Pool(mp.cpu_count()) as pool:
-        observed_p = []
-        calculate_with_args = partial(calculate_observed_p, df=df, distribution=distribution)
-        # Initialize tqdm progress bar with total length equal to len(expected_p)
-        with tqdm(total=len(expected_p)) as pbar:
-            for i in pool.imap(calculate_with_args, expected_p):
-                observed_p.append(i)
-                pbar.update()
-
+    df = df.sort_values(by='y_true', ascending=True)
+    df['cum_mean'] = np.cumsum(df['y_true']) / np.arange(1, df.shape[0] + 1)
+    expected_p = np.arange(41)/40.
+    observed_p = []
+    for p in tqdm(expected_p):
+        ppf = distribution.ppf(p, loc=df['y_pred'], scale=df['aleatoric_std'] / np.sqrt(2))
+        # find closest index where y_true < ppf
+        pos = np.searchsorted(df.y_true, ppf)
+        obs_p = df.iloc[pos]['cum_mean']
+        observed_p.append(obs_p)
     df_calibration = pd.DataFrame({'Expected Conf.': expected_p, 'Observed Conf.': observed_p})
     return df_calibration
 
