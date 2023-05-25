@@ -25,7 +25,7 @@ class EnsembleModule(pl.LightningModule):
         self.loss_fn = self.models[0].loss_fn
             
     @staticmethod
-    def _activate_mc_dropout(module: torch.nn.Module):
+    def _activate_mc_dropout(model: torch.nn.Module):
         """
         Activates MC Dropout for all Dropout layers in the given module.
         Recursively iterates through all submodules.
@@ -33,12 +33,10 @@ class EnsembleModule(pl.LightningModule):
         Args:
             module: Module to activate MC Dropout for.
         """
-        for submodule in module.modules():
+        for submodule in model.modules():
             if submodule.__class__.__name__.startswith('Dropout'):
                 submodule.train()
                 print(f"Activated MC Dropout for {submodule}")
-            elif len(list(submodule.modules())) > 1: 
-                EnsembleModule._activate_mc_dropout(submodule)
         
     @property
     def num_subnetworks(self):
