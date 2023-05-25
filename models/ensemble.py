@@ -11,12 +11,15 @@ class EnsembleModule(pl.LightningModule):
         self,
         checkpoint_paths: List[str],
         monte_carlo_steps: int = 0,
+        device: str = 'cuda',
     ):
         super().__init__()
         self.models = [MimoUnetModel.load_from_checkpoint(path) for path in checkpoint_paths]
         self.monte_carlo_steps = monte_carlo_steps
+        self.device = device
         
         for model in self.models:
+            model.to(self.device)
             model.eval()
             if self.monte_carlo_steps > 0:
                 self._activate_mc_dropout(model)
