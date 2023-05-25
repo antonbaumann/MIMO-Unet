@@ -13,7 +13,7 @@ from models.ensemble import EnsembleModule
 from datasets.nyuv2 import NYUv2DepthDataset
 
 
-def make_predictions(model, dataset, device: str, batch_size: int = 32):
+def make_predictions(model, dataset, device: str, batch_size: int = 32, noise_std: float = 0.0):
     y_preds = []
     y_trues = []
     log_params = []
@@ -22,7 +22,9 @@ def make_predictions(model, dataset, device: str, batch_size: int = 32):
 
     for data in tqdm(loader):
         images = data['image'].to(device)
-        y_pred, log_param = model(images)
+        noise = torch.randn_like(images) * noise_std
+
+        y_pred, log_param = model(images + noise)
 
         y_pred = y_pred.cpu().detach()
         log_param = log_param.cpu().detach()
@@ -134,45 +136,47 @@ def main(
     model.to(device)
 
     for dataset_name, dataset_path in datasets:
-        dataset = NYUv2DepthDataset(
-            dataset_path=dataset_path,
-            normalize=True,
-        )
+        for noise_level in [0, 0.01, 0.1, 0.3]:
+            dataset = NYUv2DepthDataset(
+                dataset_path=dataset_path,
+                normalize=True,
+            )
 
-        print(f"Making predictions on {dataset_name}...")
-        y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars = make_predictions(
-            model=model,
-            dataset=dataset,
-            batch_size=32,
-            device=device,
-        )
+            print(f"Making predictions on {dataset_name}...")
+            y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars = make_predictions(
+                model=model,
+                dataset=dataset,
+                batch_size=32,
+                device=device,
+                noise_std=noise_level,
+            )
 
-        print(f"Saving predictions on {dataset_name}...")
-        np.save(result_dir / f"{dataset_name}_y_preds.npy", y_preds.numpy())
-        np.save(result_dir / f"{dataset_name}_y_trues.npy", y_trues.numpy())
-        np.save(result_dir / f"{dataset_name}_aleatoric_vars.npy", aleatoric_vars.numpy())
-        np.save(result_dir / f"{dataset_name}_epistemic_vars.npy", epistemic_vars.numpy())
-        
-        print(f"Computing metrics on {dataset_name}...")
-        df = convert_to_pandas(
-            y_preds=y_preds,
-            y_trues=y_trues,
-            aleatoric_vars=aleatoric_vars,
-            epistemic_vars=epistemic_vars,
-            combined_vars=combined_vars,
-        )
-        df = compute_metrics(df)
+            print(f"Saving predictions on {dataset_name}...")
+            np.save(result_dir / f"{dataset_name}_{noise_level}_y_preds.npy", y_preds.numpy())
+            np.save(result_dir / f"{dataset_name}_{noise_level}_y_trues.npy", y_trues.numpy())
+            np.save(result_dir / f"{dataset_name}_{noise_level}_aleatoric_vars.npy", aleatoric_vars.numpy())
+            np.save(result_dir / f"{dataset_name}_{noise_level}_epistemic_vars.npy", epistemic_vars.numpy())
+            
+            print(f"Computing metrics on {dataset_name}...")
+            df = convert_to_pandas(
+                y_preds=y_preds,
+                y_trues=y_trues,
+                aleatoric_vars=aleatoric_vars,
+                epistemic_vars=epistemic_vars,
+                combined_vars=combined_vars,
+            )
+            df = compute_metrics(df)
 
-        print(f"Saving dataframes for {dataset_name}...")
-        df.to_pickle(result_dir / f"{dataset_name}_metrics.pkl.gz")
-        
-        df_cutoff = create_precision_recall_plot(df)
-        df_cutoff.to_csv(result_dir / f"{dataset_name}_precision_recall.csv", index=False)
-        
-        df_calibration = create_calibration_plot(df, scipy.stats.norm)
-        df_calibration.to_csv(result_dir / f"{dataset_name}_calibration.csv", index=False)
+            print(f"Saving dataframes for {dataset_name}...")
+            df.to_pickle(result_dir / f"{dataset_name}_{noise_level}_metrics.pkl.gz")
+            
+            df_cutoff = create_precision_recall_plot(df)
+            df_cutoff.to_csv(result_dir / f"{dataset_name}_{noise_level}_precision_recall.csv", index=False)
+            
+            df_calibration = create_calibration_plot(df, scipy.stats.norm)
+            df_calibration.to_csv(result_dir / f"{dataset_name}_{noise_level}_calibration.csv", index=False)
 
-        print(f"Finished processing dataset `{dataset_name}`!")
+            print(f"Finished processing dataset `{dataset_name}`!")
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -189,7 +193,7 @@ if __name__ == "__main__":
         monte_carlo_steps=args.monte_carlo_steps,
         datasets=[
             ("test", os.path.join(args.dataset_dir, "depth_test.h5")),
-            ("ood", os.path.join(args.dataset_dir, "apolloscape_test.h5")),
+            # ("ood", os.path.join(args.dataset_dir, "apolloscape_test.h5")),
         ],
         result_dir=args.result_dir,
         device=args.device,
