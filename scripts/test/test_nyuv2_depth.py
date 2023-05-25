@@ -159,8 +159,8 @@ def main(
         )
         df = compute_metrics(df)
 
-        # print(f"Saving dataframes for {dataset_name}...")
-        # df.to_csv(result_dir / f"{dataset_name}_metrics.csv.gz", index=False)
+        print(f"Saving dataframes for {dataset_name}...")
+        df.to_pickle(result_dir / f"{dataset_name}_metrics.pkl.gz", index=False)
         
         df_cutoff = create_precision_recall_plot(df)
         df_cutoff.to_csv(result_dir / f"{dataset_name}_precision_recall.csv", index=False)
