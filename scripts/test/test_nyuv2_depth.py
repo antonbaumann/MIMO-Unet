@@ -25,8 +25,9 @@ def make_predictions(model, dataset, device: str, batch_size: int = 32, noise_st
     for data in tqdm(loader):
         images = data['image'].to(device)
         noise = torch.randn_like(images) * noise_std
+        images = images + noise
 
-        y_pred, log_param = model(images + noise)
+        y_pred, log_param = model(images)
 
         y_pred = y_pred.cpu().detach()
         log_param = log_param.cpu().detach()
@@ -49,9 +50,9 @@ def make_predictions(model, dataset, device: str, batch_size: int = 32, noise_st
     return (
         y_preds.mean(axis=1)[:, 0], 
         y_trues[:, 0], 
-        aleatoric_var, 
-        epistemic_var,
-        aleatoric_var + epistemic_var,
+        aleatoric_var[:, 0], 
+        epistemic_var[:, 0],
+        aleatoric_var[:, 0] + epistemic_var[:, 0],
     )
 
 
@@ -142,7 +143,7 @@ def main(
     model.to(device)
 
     for dataset_name, dataset_path in datasets:
-        for noise_level in [0, 0.01, 0.1, 0.3]:
+        for noise_level in [0, 0.02, 0.04, 0.06, 0.08, 0.1]:
             dataset = NYUv2DepthDataset(
                 dataset_path=dataset_path,
                 normalize=True,
@@ -174,7 +175,7 @@ def main(
             df = compute_metrics(df)
 
             print(f"Saving dataframes for {dataset_name}...")
-            df.to_pickle(result_dir / f"{dataset_name}_{noise_level}_metrics.pkl.gz")
+            # df.to_pickle(result_dir / f"{dataset_name}_{noise_level}_metrics.pkl.gz")
             
             df_cutoff = create_precision_recall_plot(df)
             df_cutoff.to_csv(result_dir / f"{dataset_name}_{noise_level}_precision_recall.csv", index=False)
