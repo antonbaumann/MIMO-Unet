@@ -120,7 +120,11 @@ def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
 
     with mp.Pool(mp.cpu_count()) as pool:
         calculate_with_args = partial(calculate_observed_p, df=df, distribution=distribution)
-        observed_p = pool.map(calculate_with_args, expected_p)
+        # Initialize tqdm progress bar with total length equal to len(expected_p)
+        with tqdm(total=len(expected_p)) as pbar:
+            for i in pool.imap(calculate_with_args, expected_p):
+                pbar.update()
+            observed_p = list(i)
 
     df_calibration = pd.DataFrame({'Expected Conf.': expected_p, 'Observed Conf.': observed_p})
     return df_calibration
