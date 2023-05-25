@@ -129,6 +129,7 @@ def main(
         checkpoint_paths=model_checkpoint_paths,
         monte_carlo_steps=monte_carlo_steps,
     )
+    model.cuda()
 
     for dataset_name, dataset_path in datasets:
         dataset = NYUv2DepthDataset(

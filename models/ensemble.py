@@ -17,7 +17,6 @@ class EnsembleModule(pl.LightningModule):
         self.monte_carlo_steps = monte_carlo_steps
         
         for model in self.models:
-            model.cuda()
             model.eval()
             if self.monte_carlo_steps > 0:
                 self._activate_mc_dropout(model)
@@ -58,11 +57,13 @@ class EnsembleModule(pl.LightningModule):
         
         for model in self.models:
             x_rep = repeat_subnetworks(x, num_subnetworks=model.num_subnetworks)
+            model.to(self.device)
+            x_rep.to(self.device)
             
             for _ in range(max(1, self.monte_carlo_steps)):
                 p1, p2 = model(x_rep)
-                p1_list.append(p1)
-                p2_list.append(p2)
+                p1_list.append(p1.detach().cpu())
+                p2_list.append(p1.detach().cpu())
         
         p1 = torch.cat(p1_list, dim=1)
         p2 = torch.cat(p2_list, dim=1)
