@@ -13,7 +13,7 @@ from models.ensemble import EnsembleModule
 from datasets.nyuv2 import NYUv2DepthDataset
 
 
-def make_predictions(model, dataset, batch_size: int = 32):
+def make_predictions(model, dataset, device: str, batch_size: int = 32):
     y_preds = []
     y_trues = []
     log_params = []
@@ -21,7 +21,8 @@ def make_predictions(model, dataset, batch_size: int = 32):
     loader = DataLoader(dataset, batch_size=batch_size)
 
     for data in tqdm(loader):
-        y_pred, log_param = model(data['image'])
+        images = data['image'].to(device)
+        y_pred, log_param = model(images)
 
         y_pred = y_pred.cpu().detach()
         log_param = log_param.cpu().detach()
@@ -121,6 +122,7 @@ def main(
     monte_carlo_steps: int,
     datasets: List[Tuple[str, str]],
     result_dir: str,
+    device: str,
 ) -> None:
     result_dir = Path(result_dir)
     result_dir.mkdir(parents=True, exist_ok=False)
@@ -129,7 +131,7 @@ def main(
         checkpoint_paths=model_checkpoint_paths,
         monte_carlo_steps=monte_carlo_steps,
     )
-    model.cuda()
+    model.to(device)
 
     for dataset_name, dataset_path in datasets:
         dataset = NYUv2DepthDataset(
@@ -142,6 +144,7 @@ def main(
             model=model,
             dataset=dataset,
             batch_size=32,
+            device=device,
         )
 
         print(f"Saving predictions on {dataset_name}...")
@@ -177,6 +180,8 @@ if __name__ == "__main__":
     parser.add_argument("--result_dir", type=str, required=True)
     parser.add_argument("--dataset_dir", type=str, required=True)
     parser.add_argument("--monte_carlo_steps", type=int, default=0)
+    parser.add_argument("--device", type=str, default="cuda")
+
     args = parser.parse_args()
 
     main(
@@ -187,4 +192,5 @@ if __name__ == "__main__":
             ("ood", os.path.join(args.dataset_dir, "apolloscape_test.h5")),
         ],
         result_dir=args.result_dir,
+        device=args.device,
     )
