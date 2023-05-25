@@ -110,11 +110,8 @@ def create_precision_recall_plot(df: pd.DataFrame) -> pd.DataFrame:
 
 def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
     expected_p = np.arange(41)/40.
-    observed_p = []
-    for p in tqdm(expected_p):
-        ppf = distribution.ppf(p, loc=df['y_pred'], scale=df['aleatoric_std'] / np.sqrt(2))
-        obs_p = (df['y_true'] < ppf).mean()
-        observed_p.append(obs_p)
+    ppf = distribution.ppf(expected_p[:, None], loc=df['y_pred'], scale=df['aleatoric_std'] / np.sqrt(2))
+    observed_p = (df['y_true'].values < ppf).mean(axis=1)
     df_calibration = pd.DataFrame({'Expected Conf.': expected_p, 'Observed Conf.': observed_p})
     return df_calibration
 
