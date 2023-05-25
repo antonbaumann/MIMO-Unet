@@ -103,8 +103,8 @@ def create_precision_recall_plot(df: pd.DataFrame) -> pd.DataFrame:
     percentiles = np.arange(100)/100.
     cutoff_inds = (percentiles * df.shape[0]).astype(int)
     
-    mae = [df.iloc[cutoff:]["error"].mean() for cutoff in cutoff_inds]
-    mse = [np.square(df.iloc[cutoff:]["error"]).mean() for cutoff in cutoff_inds]
+    mae = [df.iloc[cutoff:]["error"].mean() for cutoff in tqdm(cutoff_inds)]
+    mse = [np.square(df.iloc[cutoff:]["error"]).mean() for cutoff in tqdm(cutoff_inds)]
     
     df_cutoff = pd.DataFrame({'percentile': percentiles, 'mae': mae, 'rmse': np.sqrt(mse)})
     
@@ -174,12 +174,14 @@ def main(
             )
             df = compute_metrics(df)
 
-            print(f"Saving dataframes for {dataset_name}...")
+            # print(f"Saving dataframes for {dataset_name}...")
             # df.to_pickle(result_dir / f"{dataset_name}_{noise_level}_metrics.pkl.gz")
             
+            print(f"Creating data for precision-recall plot on {dataset_name}...")
             df_cutoff = create_precision_recall_plot(df)
             df_cutoff.to_csv(result_dir / f"{dataset_name}_{noise_level}_precision_recall.csv", index=False)
             
+            print(f"Creating data for calibration plot on {dataset_name}...")
             df_calibration = create_calibration_plot(df, scipy.stats.norm)
             df_calibration.to_csv(result_dir / f"{dataset_name}_{noise_level}_calibration.csv", index=False)
 
