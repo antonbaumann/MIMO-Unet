@@ -113,15 +113,22 @@ def create_precision_recall_plot(df: pd.DataFrame) -> pd.DataFrame:
 
 def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
     df = df.sort_values(by='y_true', ascending=True)
-    df['cum_mean'] = np.cumsum(df['y_true']) / np.arange(1, df.shape[0] + 1)
+
+    y_true = df['y_true'].values
+    y_pred = df['y_pred'].values
+    aleatoric_std = df['aleatoric_std'].values
+    cum_mean = np.cumsum(y_true) / np.arange(1, df.shape[0] + 1)
+
     expected_p = np.arange(41)/40.
     observed_p = []
-    for p in tqdm(expected_p):
-        ppf = distribution.ppf(p, loc=df['y_pred'], scale=df['aleatoric_std'] / np.sqrt(2))
-        # find closest index where y_true < ppf
-        pos = np.searchsorted(df.y_true, ppf)
-        obs_p = df.iloc[pos]['cum_mean']
-        observed_p.append(obs_p)
+
+    ppfs = np.array([
+        distribution.ppf(p, loc=y_pred, scale=aleatoric_std / np.sqrt(2)) for p in tqdm(expected_p)
+    ])
+    
+    # find closest index where y_true < ppf
+    positions = np.searchsorted(df.y_true, ppfs)
+    observed_p = cum_mean[positions]
     df_calibration = pd.DataFrame({'Expected Conf.': expected_p, 'Observed Conf.': observed_p})
     return df_calibration
 
