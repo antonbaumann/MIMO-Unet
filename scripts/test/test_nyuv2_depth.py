@@ -110,10 +110,11 @@ def create_precision_recall_plot(df: pd.DataFrame) -> pd.DataFrame:
     
     return df_cutoff
 
-def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
+
+def compute_ppf(p, y_pred, aleatoric_std, distribution):
+    return distribution.ppf(p, loc=y_pred, scale=aleatoric_std / np.sqrt(2))
     
-    def compute_ppf(p, y_pred, aleatoric_std, distribution):
-        return distribution.ppf(p, loc=y_pred, scale=aleatoric_std / np.sqrt(2))
+def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
     
     y_true = df['y_true'].to_numpy()
     y_pred = df['y_pred'].to_numpy()
@@ -123,7 +124,7 @@ def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
 
     print('- computing ppfs')
     # ppfs = distribution.ppf(expected_p[:, None], loc=y_pred, scale=aleatoric_std / np.sqrt(2))
-    pool = mp.Pool()
+    pool = mp.Pool(processes=mp.cpu_count())
     results = []
     for p in tqdm(expected_p):
         result = pool.apply_async(compute_ppf, (p, y_pred, aleatoric_std, distribution))
