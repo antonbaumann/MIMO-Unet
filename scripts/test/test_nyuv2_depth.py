@@ -16,6 +16,7 @@ from datasets.nyuv2 import NYUv2DepthDataset
 
 
 def make_predictions(model, dataset, device: str, batch_size: int = 32, noise_std: float = 0.0):
+    inputs = []
     y_preds = []
     y_trues = []
     log_params = []
@@ -33,10 +34,12 @@ def make_predictions(model, dataset, device: str, batch_size: int = 32, noise_st
         log_param = log_param.cpu().detach()
         y_true = data['label'].cpu().detach()
 
+        inputs.append(images.cpu().detach())
         y_preds.append(y_pred)
         y_trues.append(y_true)
         log_params.append(log_param)
 
+    inputs = torch.cat(inputs, dim=0)
     y_preds = torch.cat(y_preds, dim=0).clip(min=0, max=1)
     y_trues = torch.cat(y_trues, dim=0).clip(min=0, max=1)
     log_params = torch.cat(log_params, dim=0)
@@ -48,6 +51,7 @@ def make_predictions(model, dataset, device: str, batch_size: int = 32, noise_st
     )
     
     return (
+        inputs,
         y_preds.mean(axis=1)[:, 0], 
         y_trues[:, 0], 
         aleatoric_var[:, 0], 
@@ -162,7 +166,7 @@ def main(
             )
 
             print(f"Making predictions on {dataset_name}...")
-            y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars = make_predictions(
+            inputs, y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars = make_predictions(
                 model=model,
                 dataset=dataset,
                 batch_size=32,
@@ -171,6 +175,7 @@ def main(
             )
 
             print(f"Saving predictions on {dataset_name}...")
+            np.save(result_dir / f"{dataset_name}_{noise_level}_inputs.npy", inputs.numpy())
             np.save(result_dir / f"{dataset_name}_{noise_level}_y_preds.npy", y_preds.numpy())
             np.save(result_dir / f"{dataset_name}_{noise_level}_y_trues.npy", y_trues.numpy())
             np.save(result_dir / f"{dataset_name}_{noise_level}_aleatoric_vars.npy", aleatoric_vars.numpy())
@@ -186,8 +191,8 @@ def main(
             )
             df = compute_metrics(df)
 
-            # print(f"Saving dataframes for {dataset_name}...")
-            # df.to_pickle(result_dir / f"{dataset_name}_{noise_level}_metrics.pkl.gz")
+            print(f"Saving dataframes for {dataset_name}...")
+            df.to_pickle(result_dir / f"{dataset_name}_{noise_level}_metrics.pkl.gz")
             
             print(f"Creating data for precision-recall plot on {dataset_name}...")
             df_cutoff = create_precision_recall_plot(df)
