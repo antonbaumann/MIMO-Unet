@@ -124,7 +124,7 @@ def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
     ])
 
     print('- computing observed_p')
-    below = y_true[:, None] < ppfs
+    below = y_true[None, :] < ppfs
     observed_p = below.mean(axis=1)
     
     df_calibration = pd.DataFrame({'Expected Conf.': expected_p, 'Observed Conf.': observed_p})
