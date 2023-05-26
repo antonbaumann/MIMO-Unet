@@ -127,7 +127,7 @@ def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
     ])
     
     # find closest index where y_true < ppf
-    positions = np.searchsorted(df.y_true, ppfs)
+    positions = np.searchsorted(y_true, ppfs)
     observed_p = cum_mean[positions]
     df_calibration = pd.DataFrame({'Expected Conf.': expected_p, 'Observed Conf.': observed_p})
     return df_calibration
