@@ -110,7 +110,6 @@ def create_precision_recall_plot(df: pd.DataFrame) -> pd.DataFrame:
     
     return df_cutoff
 
-
 def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
     df = df.sort_values(by='y_true', ascending=True)
 
@@ -125,6 +124,8 @@ def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
     ppfs = np.array([
         distribution.ppf(p, loc=y_pred, scale=aleatoric_std / np.sqrt(2)) for p in tqdm(expected_p)
     ])
+
+    print(ppfs)
     
     # find closest index where y_true < ppf
     positions = np.searchsorted(y_true, ppfs)
