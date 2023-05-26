@@ -117,11 +117,11 @@ def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
 
     expected_p = np.arange(41) / 40.
 
-    ppfs = distribution.ppf(expected_p[:, None], loc=y_pred, scale=aleatoric_std / np.sqrt(2))
+    ppfs = scipy.stats.norm.ppf(expected_p[:, None], loc=y_pred, scale=aleatoric_std / np.sqrt(2))
 
-    below = y_true[:, None] < ppfs
+    below = y_true[None, :] < ppfs
     observed_p = below.mean(axis=0)
-    
+        
     # find closest index where y_true < ppf
     df_calibration = pd.DataFrame({'Expected Conf.': expected_p, 'Observed Conf.': observed_p})
     return df_calibration
