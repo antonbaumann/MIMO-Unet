@@ -124,14 +124,9 @@ def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
 
     print('- computing ppfs')
     # ppfs = distribution.ppf(expected_p[:, None], loc=y_pred, scale=aleatoric_std / np.sqrt(2))
-    pool = mp.Pool(processes=mp.cpu_count())
-    results = []
-    for p in tqdm(expected_p):
-        result = pool.apply_async(compute_ppf, (p, y_pred, aleatoric_std, distribution))
-        results.append(result)
-    ppfs = np.array([result.get() for result in results])
-    pool.close()
-    pool.join()
+    with mp.Pool(processes=mp.cpu_count()) as pool:
+        results = pool.imap(compute_ppf, expected_p, chunksize=1)
+        ppfs = np.array(list(tqdm(results, total=len(expected_p))))
 
     print('- computing observed_p')
     below = y_true[None, :] < ppfs
