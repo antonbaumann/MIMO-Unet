@@ -9,7 +9,6 @@ import pandas as pd
 from pathlib import Path
 import os
 import multiprocessing as mp
-from functools import partial
 
 from models.ensemble import EnsembleModule
 from datasets.nyuv2 import NYUv2DepthDataset
@@ -128,7 +127,6 @@ def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
     expected_p = np.arange(41) / 40.
 
     print('- computing ppfs')
-    # ppfs = distribution.ppf(expected_p[:, None], loc=y_pred, scale=aleatoric_std / np.sqrt(2))
     with mp.Pool(processes=mp.cpu_count()) as pool:
         params = [(p, y_pred, aleatoric_std, distribution) for p in expected_p]
         results = pool.imap(compute_ppf, params, chunksize=1)

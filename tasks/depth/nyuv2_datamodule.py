@@ -17,6 +17,7 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         num_workers: int,
         pin_memory: bool,
         normalize: bool = True,
+        train_dataset_fraction: float = 1.0,
     ) -> None:
         super().__init__()
         self.dataset_dir = dataset_dir
@@ -24,6 +25,7 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.pin_memory = pin_memory
         self.normalize = normalize
+        self.train_dataset_fraction = train_dataset_fraction
 
     def setup(
         self,
@@ -33,6 +35,7 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
             dataset_path=os.path.join(self.dataset_dir, "depth_train.h5"),
             normalize=self.normalize,
             shuffle_on_load=False,
+            use_fraction=self.train_dataset_fraction,
         )
 
         self.data_valid = NYUv2DepthDataset(
@@ -115,6 +118,13 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
             type=bool,
             default=True,
             help="Specify whether to pin memory.",
+        )
+
+        parser.add_argument(
+            "--train_dataset_fraction",
+            type=float,
+            default=1.0,
+            help="Specify the fraction of the training dataset to use.",
         )
 
         return parent_parser

@@ -47,6 +47,7 @@ class NYUv2DepthParams:
     batch_size: int
     num_workers: int
     pin_memory: bool
+    train_dataset_fraction: float
 
     num_subnetworks: int
     filter_base_count: int
@@ -77,6 +78,7 @@ class NYUv2DepthParams:
             batch_size=args.batch_size,
             num_workers=args.num_workers,
             pin_memory=args.pin_memory,
+            train_dataset_fraction=args.train_dataset_fraction,
 
             # model parameters
             num_subnetworks=args.num_subnetworks,

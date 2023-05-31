@@ -14,6 +14,7 @@ class NYUv2DepthDataset(Dataset):
             dataset_path: str,
             normalize: bool = True,
             shuffle_on_load: bool = False,
+            use_fraction: float = 1.0,
         ):
         super().__init__()
         h5_data = h5py.File(dataset_path, "r")
@@ -23,6 +24,10 @@ class NYUv2DepthDataset(Dataset):
             self.shuffle_permutation = np.random.permutation(len(self.data['image']))
         else:
             self.shuffle_permutation = np.arange(len(self.data['image']))
+        
+        if use_fraction < 1.0:
+            num_items = int(len(self.data['image']) * use_fraction)
+            self.shuffle_permutation = np.random.choice(self.shuffle_permutation, size=num_items, replace=False)
 
     def __getitem__(self, index):
         shuffled_index = self.shuffle_permutation[index]
