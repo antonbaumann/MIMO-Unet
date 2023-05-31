@@ -87,6 +87,7 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
             batch_size=params.batch_size,
             num_workers=params.num_workers,
             pin_memory=params.pin_memory,
+            train_dataset_fraction=params.train_dataset_fraction,
         )
 
     @staticmethod
