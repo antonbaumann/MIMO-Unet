@@ -26,8 +26,10 @@ class NYUv2DepthDataset(Dataset):
             self.shuffle_permutation = np.arange(len(self.data['image']))
         
         if use_fraction < 1.0:
-            num_items = int(len(self.data['image']) * use_fraction)
-            self.shuffle_permutation = np.random.choice(self.shuffle_permutation, size=num_items, replace=False)
+            self.num_items = int(len(self.data['image']) * use_fraction)
+            self.shuffle_permutation = np.random.choice(self.shuffle_permutation, size=self.num_items, replace=False)
+        else:
+            self.num_items = len(self.data['image'])
 
     def __getitem__(self, index):
         shuffled_index = self.shuffle_permutation[index]
@@ -45,7 +47,7 @@ class NYUv2DepthDataset(Dataset):
         }
 
     def __len__(self):
-        return len(self.data['image'])
+        return self.num_items
     
     @staticmethod
     def depth_to_disparity(depth_map: np.array) -> np.array:
