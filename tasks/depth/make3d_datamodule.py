@@ -16,7 +16,7 @@ class Make3dDepthDataModule(pl.LightningDataModule):
         batch_size: int,
         num_workers: int,
         pin_memory: bool,
-        normalize: bool = False,
+        normalize: bool = True,
         train_dataset_fraction: float = 1.0,
     ) -> None:
         super().__init__()
