@@ -133,7 +133,7 @@ def main(params: Make3dDepthParams):
         precision=16,
         max_epochs=100,
         default_root_dir=params.checkpoint_path,
-        log_every_n_steps=1,
+        log_every_n_steps=10,
         logger=wandb_logger,
     )
 
