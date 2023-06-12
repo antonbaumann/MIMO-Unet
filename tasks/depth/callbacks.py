@@ -49,7 +49,7 @@ class OutputMonitor(pl.Callback):
         pl_module: pl.LightningModule,
         logger,
     ):
-        ndvi_kwargs = {"vmin": 0, "vmax": 70, "cmap": "turbo"}
+        ndvi_kwargs = {"vmin": 0, "vmax": None, "cmap": "turbo"}
         self._log_matrix(img_data, log_name, global_step, pl_module, logger=logger, **ndvi_kwargs)
 
     def _log_error_map(
