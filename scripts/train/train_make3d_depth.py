@@ -165,7 +165,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max_epochs",
         type=int,
-        default=100,
+        default=60,
         help="Specify the maximum number of epochs to train.",
     )
     parser = Make3dDepthDataModule.add_model_specific_args(parser)
