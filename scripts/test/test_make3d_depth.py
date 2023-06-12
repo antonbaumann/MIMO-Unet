@@ -177,8 +177,8 @@ if __name__ == "__main__":
         model_checkpoint_paths=args.model_checkpoint_paths,
         monte_carlo_steps=args.monte_carlo_steps,
         datasets=[
-            ("make3d", os.path.join(args.make3d_dataset_dir, "depth_test.h5")),
-            ("nyuv2depth", os.path.join(args.nyuv2_dataset_dir, "test")),
+            ("make3d", os.path.join(args.make3d_dataset_dir, "test")),
+            ("nyuv2depth", os.path.join(args.nyuv2_dataset_dir, "depth_test.h5")),
         ],
         result_dir=args.result_dir,
         device=args.device,
