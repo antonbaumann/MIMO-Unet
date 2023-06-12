@@ -61,6 +61,10 @@ class Make3dDepthDataset(Dataset):
 
         images = load_images(os.path.join(dataset_path, 'images'), image_paths)
         labels = load_depth_maps(os.path.join(dataset_path, 'labels'), label_paths)
+
+        if len (images) != len(labels):
+            raise Exception('Number of images and labels must be equal. Got {} images and {} labels.'.format(len(images), len(labels)))
+        
         masks = labels <= 70
 
         self.data = {
