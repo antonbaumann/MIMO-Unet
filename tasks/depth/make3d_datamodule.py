@@ -16,7 +16,7 @@ class Make3dDepthDataModule(pl.LightningDataModule):
         batch_size: int,
         num_workers: int,
         pin_memory: bool,
-        normalize: bool = True,
+        normalize: bool,
         train_dataset_fraction: float = 1.0,
     ) -> None:
         super().__init__()
@@ -113,6 +113,13 @@ class Make3dDepthDataModule(pl.LightningDataModule):
             type=int,
             default=32,
             help="Specify the number of workers.",
+        )
+
+        parser.add_argument(
+            "--normalize",
+            type=bool,
+            default=True,
+            help="Specify whether to normalize the data.",
         )
 
         parser.add_argument(
