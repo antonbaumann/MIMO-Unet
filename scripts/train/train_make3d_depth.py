@@ -131,7 +131,7 @@ def main(params: Make3dDepthParams):
         accelerator='gpu', 
         devices=1,
         precision=16,
-        max_epochs=100,
+        max_epochs=params.max_epochs,
         default_root_dir=params.checkpoint_path,
         log_every_n_steps=10,
         logger=wandb_logger,
