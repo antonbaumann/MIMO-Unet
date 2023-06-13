@@ -41,13 +41,13 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         self.data_valid = NYUv2DepthDataset(
             dataset_path=os.path.join(self.dataset_dir, "depth_test.h5"),
             normalize=self.normalize,
-            shuffle_on_load=False,
+            shuffle_on_load=True,
         )
 
         self.data_test = NYUv2DepthDataset(
             dataset_path=os.path.join(self.dataset_dir, "depth_test.h5"),
             normalize=self.normalize,
-            shuffle_on_load=False,
+            shuffle_on_load=True,
         )
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
