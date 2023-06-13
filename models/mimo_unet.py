@@ -115,7 +115,7 @@ class MimoUnetModel(pl.LightningModule):
         y_pred = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2)
 
-        print(p1.shape, p2.shape, y_pred.shape, aleatoric_std.shape)
+        print(p1.shape, p2.shape, y_pred.shape, aleatoric_std.shape, mask_transformed.shape)
         loss, loss_weighted, weights = self._calculate_train_loss(p1, p2, y_true=label_transformed, mask=mask_transformed)
 
         print(loss.shape, loss_weighted.shape, weights.shape)
