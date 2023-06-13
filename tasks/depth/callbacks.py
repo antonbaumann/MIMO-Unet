@@ -73,7 +73,7 @@ class OutputMonitor(pl.Callback):
     ):
         visualization_kwargs = dict(
             vmin=0.0,
-            vmax=None,
+            vmax=1.0,
             cmap="Reds",
         )
         if mask is not None:
