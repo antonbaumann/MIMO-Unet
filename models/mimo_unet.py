@@ -284,7 +284,9 @@ class MimoUnetModel(pl.LightningModule):
         """
 
         loss = self.loss_fn.forward(p1, p2, y_true, reduce_mean=False, mask=mask).mean(dim=(0, 2, 3, 4))
+        print(loss.shape)
         weights = self.loss_buffer.get_weights().to(loss.device)
+        print(weights.shape)
         loss_weighted = loss * weights
         self.loss_buffer.add(loss.detach())
         return loss, loss_weighted, weights
