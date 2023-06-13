@@ -97,7 +97,7 @@ class Make3dDepthDataset(Dataset):
         return {
             'image': torch.tensor(image).permute(2, 0, 1).float(),
             'label': torch.tensor(label).permute(2, 0, 1).float(),
-            'mask': torch.tensor(mask).permute(2, 0, 1).float(),
+            # 'mask': torch.tensor(mask).permute(2, 0, 1).float(),
         }
 
     def __len__(self):
