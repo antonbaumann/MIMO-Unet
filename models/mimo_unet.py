@@ -124,7 +124,7 @@ class MimoUnetModel(pl.LightningModule):
             "preds": self._flatten_subnetwork_dimension(y_pred),
             "aleatoric_std_map": self._flatten_subnetwork_dimension(aleatoric_std), 
             "err_map": self._flatten_subnetwork_dimension(y_pred - label_transformed),
-            "mask": self._flatten_subnetwork_dimension(mask_transformed),
+            "mask": self._flatten_subnetwork_dimension(mask_transformed) if mask_transformed is not None else None,
         }
     
     def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> Dict[str, torch.Tensor]:
