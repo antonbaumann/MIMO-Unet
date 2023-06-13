@@ -138,12 +138,12 @@ class MimoUnetModel(pl.LightningModule):
 
         x = self._repeat_subnetworks(x)
         y = self._repeat_subnetworks(y)
-        mask = self._repeat_subnetworks(mask) if mask is not None else None
+        mask_transformed = self._repeat_subnetworks(mask) if mask is not None else None
 
         p1, p2 = self(x)
 
         # [S, ]
-        val_loss = self.loss_fn.forward(p1, p2, y, mask=mask, reduce_mean=False).mean(dim=(0, 2, 3, 4))
+        val_loss = self.loss_fn.forward(p1, p2, y, mask=mask_transformed, reduce_mean=False).mean(dim=(0, 2, 3, 4))
 
         # [B, S, 1, H, W]
         y_pred = self.loss_fn.mode(p1, p2)
@@ -155,7 +155,7 @@ class MimoUnetModel(pl.LightningModule):
         combined_std = (aleatoric_std ** 2 + epistemic_std ** 2) ** 0.5
         combined_log_scale = self.loss_fn.calculate_dist_param(std=combined_std, log=True)
 
-        val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), combined_log_scale, y_mean, reduce_mean=True)
+        val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), combined_log_scale, y_mean, mask=mask_transformed, reduce_mean=True)
 
         self._log_val_loss(val_loss, val_loss_combined)
         self._log_metrics(y_pred=y_pred_mean, y_true=y_mean, stage="val")
