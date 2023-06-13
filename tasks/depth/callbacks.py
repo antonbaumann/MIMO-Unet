@@ -48,12 +48,15 @@ class OutputMonitor(pl.Callback):
         global_step: int,
         pl_module: pl.LightningModule,
         logger,
+        mask: Optional[torch.Tensor] = None,
     ):
         ndvi_kwargs = {"vmin": 0, "vmax": 1, "cmap": "turbo"}
+        if mask is not None:
+            img_data = img_data * mask
         self._log_matrix(img_data, log_name, global_step, pl_module, logger=logger, **ndvi_kwargs)
 
     def _log_error_map(
-        self, err_map: torch.Tensor, log_name, global_step: int, pl_module: pl.LightningModule, logger
+        self, err_map: torch.Tensor, log_name, global_step: int, pl_module: pl.LightningModule, logger, mask: Optional[torch.Tensor] = None
     ):
         vmax = 1
         visualization_kwargs = dict(
@@ -61,21 +64,25 @@ class OutputMonitor(pl.Callback):
             vmax=2 * vmax,
             cmap="seismic",
         )
+        if mask is not None:
+            err_map = err_map * mask
         self._log_matrix(err_map, log_name, global_step, pl_module, logger=logger, **visualization_kwargs)
 
     def _log_std_map(
-        self, std_map: torch.Tensor, log_name, global_step: int, pl_module: pl.LightningModule, logger
+        self, std_map: torch.Tensor, log_name, global_step: int, pl_module: pl.LightningModule, logger, mask: Optional[torch.Tensor] = None
     ):
         visualization_kwargs = dict(
             vmin=0.0,
             vmax=1.0,
             cmap="Reds",
         )
+        if mask is not None:
+            std_map = std_map * mask
         self._log_matrix(std_map, log_name, global_step, pl_module, logger=logger, **visualization_kwargs)
 
 
     def on_train_batch_end(
-        self, trainer, pl_module, outputs, batch, batch_idx
+        self, trainer, pl_module, outputs, batch, batch_idx,
     ):
         if (batch_idx + 1) % trainer.log_every_n_steps == 0:
             kwargs = {
@@ -91,16 +98,16 @@ class OutputMonitor(pl.Callback):
                 outputs = _outs[0]
 
             self._log_image(
-                img_data=outputs["preds"], log_name="train/depth_predicted", **kwargs
+                img_data=outputs["preds"], mask=outputs.get('mask', None), log_name="train/depth_predicted", **kwargs
             )
             self._log_image(
-                img_data=outputs["label"], log_name="train/depth_true", **kwargs
+                img_data=outputs["label"], mask=outputs.get('mask', None), log_name="train/depth_true", **kwargs
             )
             self._log_error_map(
-                err_map=outputs["err_map"], log_name="train/depth_error", **kwargs
+                err_map=outputs["err_map"], mask=outputs.get('mask', None), log_name="train/depth_error", **kwargs
             )
             self._log_std_map(
-                std_map=outputs["aleatoric_std_map"], log_name="train/depth_aleatoric_std", **kwargs
+                std_map=outputs["aleatoric_std_map"], mask=outputs.get('mask', None), log_name="train/depth_aleatoric_std", **kwargs
             )
 
     def on_validation_batch_end(
@@ -114,18 +121,18 @@ class OutputMonitor(pl.Callback):
             }
 
             self._log_image(
-                img_data=outputs["preds"], log_name="val/depth_predicted", **kwargs
+                img_data=outputs["preds"], mask=outputs.get('mask', None), log_name="val/depth_predicted", **kwargs
             )
             self._log_image(
-                img_data=outputs["label"], log_name="val/depth_true", **kwargs
+                img_data=outputs["label"], mask=outputs.get('mask', None), log_name="val/depth_true", **kwargs
             )
             self._log_error_map(
-                err_map=outputs["err_map"], log_name="val/depth_error", **kwargs
+                err_map=outputs["err_map"], mask=outputs.get('mask', None), log_name="val/depth_error", **kwargs
             )
             self._log_std_map(
-                std_map=outputs["aleatoric_std_map"], log_name="val/depth_aleatoric_std", **kwargs
+                std_map=outputs["aleatoric_std_map"], mask=outputs.get('mask', None), log_name="val/depth_aleatoric_std", **kwargs
             )
             if 'epistemic_std_map' in outputs:
                 self._log_std_map(
-                    std_map=outputs["epistemic_std_map"], log_name="val/depth_epistemic_std", **kwargs
+                    std_map=outputs["epistemic_std_map"], mask=outputs.get('mask', None), log_name="val/depth_epistemic_std", **kwargs
                 )

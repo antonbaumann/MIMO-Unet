@@ -124,6 +124,7 @@ class MimoUnetModel(pl.LightningModule):
             "preds": self._flatten_subnetwork_dimension(y_pred), 
             "aleatoric_std_map": self._flatten_subnetwork_dimension(aleatoric_std), 
             "err_map": self._flatten_subnetwork_dimension(y_pred - label_transformed),
+            "mask": self._flatten_subnetwork_dimension(mask) if mask is not None else None,
         }
     
     def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> Dict[str, torch.Tensor]:
@@ -160,6 +161,7 @@ class MimoUnetModel(pl.LightningModule):
             "aleatoric_std_map": aleatoric_std, 
             "epistemic_std_map": epistemic_std,
             "err_map": y_pred_mean.squeeze(dim=1) - y_mean,
+            "mask": mask,
         }
 
     def configure_optimizers(self) -> Dict[str, Any]:
