@@ -135,7 +135,6 @@ class MimoUnetModel(pl.LightningModule):
 
         x = self._repeat_subnetworks(x)
         y = self._repeat_subnetworks(y)
-        mask = self._repeat_subnetworks(mask) if mask is not None else None
 
         p1, p2 = self(x)
 
