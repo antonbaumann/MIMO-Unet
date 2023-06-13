@@ -107,13 +107,13 @@ class MimoUnetModel(pl.LightningModule):
         image, label = batch["image"], batch["label"]
         mask = batch["mask"] if "mask" in batch else None
         
-        image_transformed, label_transformed = self._apply_input_transform(image, label)
+        image_transformed, label_transformed, mask_transformed = self._apply_input_transform(image, label, mask)
 
         p1, p2 = self(image_transformed)
         y_pred = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2)
 
-        loss, loss_weighted, weights = self._calculate_train_loss(p1, p2, y_true=label_transformed, mask=mask)
+        loss, loss_weighted, weights = self._calculate_train_loss(p1, p2, y_true=label_transformed, mask=mask_transformed)
 
         self._log_train_loss_and_weights(loss, weights)
         self._log_metrics(y_pred=y_pred, y_true=label_transformed, stage="train")
@@ -124,7 +124,7 @@ class MimoUnetModel(pl.LightningModule):
             "preds": self._flatten_subnetwork_dimension(y_pred), 
             "aleatoric_std_map": self._flatten_subnetwork_dimension(aleatoric_std), 
             "err_map": self._flatten_subnetwork_dimension(y_pred - label_transformed),
-            "mask": self._flatten_subnetwork_dimension(mask) if mask is not None else None,
+            "mask": self._flatten_subnetwork_dimension(mask_transformed) if mask_transformed is not None else None,
         }
     
     def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> Dict[str, torch.Tensor]:
@@ -197,6 +197,7 @@ class MimoUnetModel(pl.LightningModule):
             self, 
             image: torch.Tensor,
             label: torch.Tensor,
+            mask: torch.Tensor = None,
         ):
         """
         Apply input transformations to the input data.
@@ -229,7 +230,11 @@ class MimoUnetModel(pl.LightningModule):
             [torch.index_select(label, 0, indices) for indices in shuffle_indices],
             dim=1,
         )
-        return image_transformed, label_transformed
+        mask_transformed = torch.stack(
+            [torch.index_select(mask, 0, indices) for indices in shuffle_indices],
+            dim=1,
+        ) if mask is not None else None
+        return image_transformed, label_transformed, mask_transformed
 
     def _repeat_subnetworks(self, x: torch.Tensor):
         """
