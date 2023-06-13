@@ -155,7 +155,7 @@ class MimoUnetModel(pl.LightningModule):
         combined_std = (aleatoric_std ** 2 + epistemic_std ** 2) ** 0.5
         combined_log_scale = self.loss_fn.calculate_dist_param(std=combined_std, log=True)
 
-        val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), combined_log_scale, y_mean, mask=mask_transformed, reduce_mean=True)
+        val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), combined_log_scale, y_mean, mask=mask, reduce_mean=True)
 
         self._log_val_loss(val_loss, val_loss_combined)
         self._log_metrics(y_pred=y_pred_mean, y_true=y_mean, stage="val")
