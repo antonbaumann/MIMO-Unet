@@ -106,8 +106,6 @@ class MimoUnetModel(pl.LightningModule):
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> Dict[str, torch.Tensor]:
         image, label = batch["image"], batch["label"]
         mask = batch["mask"] if "mask" in batch else None
-
-        print(image.shape, label.shape, mask.shape)
         
         image_transformed, label_transformed, mask_transformed = self._apply_input_transform(image, label, mask)
 
@@ -115,10 +113,7 @@ class MimoUnetModel(pl.LightningModule):
         y_pred = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2)
 
-        print(p1.shape, p2.shape, y_pred.shape, aleatoric_std.shape, mask_transformed.shape)
         loss, loss_weighted, weights = self._calculate_train_loss(p1, p2, y_true=label_transformed, mask=mask_transformed)
-
-        print(loss.shape, loss_weighted.shape, weights.shape)
 
         self._log_train_loss_and_weights(loss, weights)
         self._log_metrics(y_pred=y_pred, y_true=label_transformed, stage="train")
@@ -126,7 +121,7 @@ class MimoUnetModel(pl.LightningModule):
         return {
             "loss": loss_weighted.mean(),
             "label": self._flatten_subnetwork_dimension(label_transformed),
-            "preds": self._flatten_subnetwork_dimension(y_pred), 
+            "preds": self._flatten_subnetwork_dimension(y_pred),
             "aleatoric_std_map": self._flatten_subnetwork_dimension(aleatoric_std), 
             "err_map": self._flatten_subnetwork_dimension(y_pred - label_transformed),
             "mask": self._flatten_subnetwork_dimension(mask_transformed),
@@ -285,11 +280,8 @@ class MimoUnetModel(pl.LightningModule):
         """
 
         forward = self.loss_fn.forward(p1, p2, y_true, reduce_mean=False, mask=mask)
-        print(forward.shape)
         loss = forward.mean(dim=(0, 2, 3, 4))
-        print(loss.shape)
         weights = self.loss_buffer.get_weights().to(loss.device)
-        print(weights.shape)
         loss_weighted = loss * weights
         self.loss_buffer.add(loss.detach())
         return loss, loss_weighted, weights
