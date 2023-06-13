@@ -36,7 +36,9 @@ class NYUv2DepthDataset(Dataset):
         image = self.data['image'][shuffled_index]
         label = self.data['label'][shuffled_index]
 
-        label = 1 - label / 255.0 # convert disparity to depth
+        # label = 1 - label / 255.0 # convert disparity to depth
+
+        label = label / 255.0
 
         if self.normalize:
             image = image / 255.0
