@@ -92,7 +92,7 @@ class Make3dDepthDataset(Dataset):
 
         if self.normalize:
             image = image / 255.0
-            # label = label / 70.0
+            label = label / 70.0
 
         return {
             'image': torch.tensor(image).permute(2, 0, 1).float(),

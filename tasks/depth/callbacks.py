@@ -50,7 +50,7 @@ class OutputMonitor(pl.Callback):
         logger,
         mask: Optional[torch.Tensor] = None,
     ):
-        ndvi_kwargs = {"vmin": 0, "vmax": 120, "cmap": "turbo"}
+        ndvi_kwargs = {"vmin": 0, "vmax": 1, "cmap": "turbo"}
         if mask is not None:
             img_data = img_data * mask
         self._log_matrix(img_data, log_name, global_step, pl_module, logger=logger, **ndvi_kwargs)
@@ -58,7 +58,7 @@ class OutputMonitor(pl.Callback):
     def _log_error_map(
         self, err_map: torch.Tensor, log_name, global_step: int, pl_module: pl.LightningModule, logger, mask: Optional[torch.Tensor] = None
     ):
-        vmax = 120
+        vmax = 1
         visualization_kwargs = dict(
             vmin=-2 * vmax,
             vmax=2 * vmax,
