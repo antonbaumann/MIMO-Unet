@@ -31,8 +31,7 @@ class NYUv2DepthDataset(Dataset):
         
         if use_fraction < 1.0:
             self.num_items = int(len(self.data['image']) * use_fraction)
-            select_indices = np.random.choice(len(self.data['image']), size=self.num_items, replace=False).sort()
-            self.shuffle_permutation = self.shuffle_permutation[select_indices]
+            self.shuffle_permutation = np.random.choice(self.shuffle_permutation, size=self.num_items, replace=False)
         else:
             self.num_items = len(self.data['image'])
 
