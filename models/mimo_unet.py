@@ -197,7 +197,6 @@ class MimoUnetModel(pl.LightningModule):
             self, 
             image: torch.Tensor,
             label: torch.Tensor,
-            mask: torch.Tensor = None,
         ):
         """
         Apply input transformations to the input data.
@@ -230,11 +229,7 @@ class MimoUnetModel(pl.LightningModule):
             [torch.index_select(label, 0, indices) for indices in shuffle_indices],
             dim=1,
         )
-        mask_transformed = torch.stack(
-            [torch.index_select(mask, 0, indices) for indices in shuffle_indices],
-            dim=1,
-        ) if mask is not None else None
-        return image_transformed, label_transformed, mask_transformed
+        return image_transformed, label_transformed
 
     def _repeat_subnetworks(self, x: torch.Tensor):
         """
