@@ -329,8 +329,8 @@ class MimoUnetModel(pl.LightningModule):
         self.log("val_loss_combined", val_loss_combined, batch_size=self.trainer.datamodule.batch_size)
     
     def _log_uncertainties(self, aleatoric_std: torch.Tensor, epistemic_std: torch.Tensor) -> None:
-        self.log("metric_val/aleatoric_std_mean", aleatoric_std.mean(), batch_size=self.trainer.datamodule.batch_size)
-        self.log("metric_val/epistemic_std_mean", epistemic_std.mean(), batch_size=self.trainer.datamodule.batch_size)
+        self.log("metric_val/aleatoric_std_mean", aleatoric_std.clip(0, 5).mean(), batch_size=self.trainer.datamodule.batch_size)
+        self.log("metric_val/epistemic_std_mean", epistemic_std.clip(0, 5).mean(), batch_size=self.trainer.datamodule.batch_size)
 
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser) -> ArgumentParser:
