@@ -58,11 +58,11 @@ class OutputMonitor(pl.Callback):
     def _log_error_map(
         self, err_map: torch.Tensor, log_name, global_step: int, pl_module: pl.LightningModule, logger, mask: Optional[torch.Tensor] = None
     ):
-        vmax = 1
+        err_map = torch.abs(err_map)
         visualization_kwargs = dict(
-            vmin=-2 * vmax,
-            vmax=2 * vmax,
-            cmap="seismic",
+            vmin=0,
+            vmax=2,
+            cmap="Reds",
         )
         if mask is not None:
             err_map = err_map * mask
