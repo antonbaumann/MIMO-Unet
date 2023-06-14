@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional
 import torch
+from functools import partial
 import torchmetrics
 
 
@@ -8,6 +9,8 @@ def get_metric(metric: str):
         return torchmetrics.functional.mean_absolute_error
     elif metric == "mse":
         return torchmetrics.functional.mean_squared_error
+    elif metric == "rmse":
+        return partial(torchmetrics.functional.mean_squared_error, squared=False)
     elif metric == "r2":
         return torchmetrics.functional.r2_score
     elif metric == "mape":
@@ -19,7 +22,7 @@ def get_metric(metric: str):
 def compute_regression_metrics(
     y_hat: torch.Tensor, 
     y: torch.Tensor, 
-    metrics: Optional[List[str]] = ['r2', 'mae', 'mse'],
+    metrics: Optional[List[str]] = ['r2', 'mae', 'mse', 'rmse'],
 ) -> Dict[str, float]:
     y = y.detach()
     y_hat = y_hat.detach()
