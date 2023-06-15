@@ -157,7 +157,7 @@ def main(
     model.to(device)
 
     for dataset_name, dataset_path in datasets:
-        for noise_level in [0]:
+        for noise_level in [0, 0.01]:
             dataset = NYUv2DepthDataset(
                 dataset_path=dataset_path,
                 normalize=True,
@@ -190,7 +190,7 @@ def main(
             df = compute_metrics(df)
 
             print(f"Saving dataframes for {dataset_name}...")
-            df.to_pickle(result_dir / f"{dataset_name}_{noise_level}_metrics.pkl.gz")
+            df.to_pickle(result_dir / f"{dataset_name}_{noise_level}_metrics.pkl")
             
             print(f"Creating data for precision-recall plot on {dataset_name}...")
             df_cutoff = create_precision_recall_plot(df)

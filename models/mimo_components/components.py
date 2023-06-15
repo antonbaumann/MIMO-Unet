@@ -103,7 +103,7 @@ class Up(nn.Module):
                 dropout_rate=dropout_rate,
             )
 
-    def forward(self, x1, x2, pooling_indices: Optional = None):
+    def forward(self, x1, x2, pooling_indices = None):
         if self.use_pooling_indices:
             x1 = self.up(x1, indices=pooling_indices)
         else:
