@@ -196,9 +196,9 @@ def main(
             df_cutoff = create_precision_recall_plot(df)
             df_cutoff.to_csv(result_dir / f"{dataset_name}_{noise_level}_precision_recall.csv", index=False)
             
-            print(f"Creating data for calibration plot on {dataset_name}...")
-            df_calibration = create_calibration_plot(df, scipy.stats.norm)
-            df_calibration.to_csv(result_dir / f"{dataset_name}_{noise_level}_calibration.csv", index=False)
+            # print(f"Creating data for calibration plot on {dataset_name}...")
+            # df_calibration = create_calibration_plot(df, scipy.stats.norm)
+            # df_calibration.to_csv(result_dir / f"{dataset_name}_{noise_level}_calibration.csv", index=False)
 
             print(f"Finished processing dataset `{dataset_name}`!")
 
