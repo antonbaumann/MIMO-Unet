@@ -144,7 +144,7 @@ def main(
     model.to(device)
 
     for dataset_name, dataset_path in datasets:
-        for noise_level in [0, 0.01, 0.02]:
+        for noise_level in [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40]:
             if dataset_name == 'nyuv2depth':
                 dataset = NYUv2DepthDataset(
                     dataset_path=dataset_path,
