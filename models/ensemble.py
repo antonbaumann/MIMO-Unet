@@ -61,8 +61,8 @@ class EnsembleModule(pl.LightningModule):
             
             for _ in range(max(1, self.monte_carlo_steps)):
                 p1, p2 = model(x_rep)
-                p1_list.append(p1.detach().cpu())
-                p2_list.append(p2.detach().cpu())
+                p1_list.append(p1.cpu())
+                p2_list.append(p2.cpu())
         
         p1 = torch.cat(p1_list, dim=1)
         p2 = torch.cat(p2_list, dim=1)
