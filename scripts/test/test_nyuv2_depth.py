@@ -64,12 +64,12 @@ def make_predictions(model, dataset, device: str, batch_size: int = 32, epsilon:
         log_param = log_param.cpu().detach()
         y_true = data['label'].cpu().detach()
 
-        inputs.append(images.cpu().detach())
+        inputs.append(perturbed_data.cpu().detach())
         y_preds.append(y_pred)
         y_trues.append(y_true)
         log_params.append(log_param)
 
-    inputs = torch.cat(perturbed_data, dim=0)
+    inputs = torch.cat(inputs, dim=0)
     y_preds = torch.cat(y_preds, dim=0).clip(min=0, max=1)
     y_trues = torch.cat(y_trues, dim=0).clip(min=0, max=1)
     log_params = torch.cat(log_params, dim=0)
@@ -188,7 +188,7 @@ def main(
     model.to(device)
 
     for dataset_name, dataset_path in datasets:
-        for noise_level in [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40]:
+        for noise_level in [0.000, 0.005, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040]:
             dataset = NYUv2DepthDataset(
                 dataset_path=dataset_path,
                 normalize=True,
