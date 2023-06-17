@@ -69,7 +69,7 @@ def make_predictions(model, dataset, device: str, batch_size: int = 32, epsilon:
         y_trues.append(y_true)
         log_params.append(log_param)
 
-    inputs = torch.cat(inputs, dim=0)
+    inputs = torch.cat(perturbed_data, dim=0)
     y_preds = torch.cat(y_preds, dim=0).clip(min=0, max=1)
     y_trues = torch.cat(y_trues, dim=0).clip(min=0, max=1)
     log_params = torch.cat(log_params, dim=0)
