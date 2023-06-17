@@ -35,6 +35,7 @@ def make_predictions(model, dataset, device: str, batch_size: int = 32, epsilon:
         images = data['image'].to(device)
         labels = data['label'].to(device)
 
+        labels = labels.unsqueeze(1)
         labels = labels.repeat(1, model.num_subnetworks, 1, 1, 1)
 
         images.requires_grad = True
