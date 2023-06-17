@@ -39,7 +39,8 @@ def make_predictions(model, dataset, device: str, batch_size: int = 32, epsilon:
 
         y_pred, log_param = model(images)
 
-        loss = model.loss_fn(y_pred, labels, log_param)
+        print(y_pred.shape, log_param.shape, labels.shape)
+        loss = model.loss_fn(y_pred, log_param, labels)
 
         # Zero all existing gradients
         model.zero_grad()
