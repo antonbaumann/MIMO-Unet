@@ -196,7 +196,7 @@ def main(
                 dataset=dataset,
                 batch_size=32,
                 device=device,
-                noise_std=noise_level,
+                epsilon=noise_level,
             )
 
             print(f"Saving predictions on {dataset_name}...")
