@@ -13,8 +13,17 @@ import multiprocessing as mp
 from models.ensemble import EnsembleModule
 from datasets.nyuv2 import NYUv2DepthDataset
 
+def fgsm_attack(image, epsilon, data_grad):
+    # Collect the element-wise sign of the data gradient
+    sign_data_grad = data_grad.sign()
+    # Create the perturbed image by adjusting each pixel of the input image
+    perturbed_image = image + epsilon*sign_data_grad
+    # Adding clipping to maintain [0,1] range
+    perturbed_image = torch.clamp(perturbed_image, 0, 1)
+    # Return the perturbed image
+    return perturbed_image
 
-def make_predictions(model, dataset, device: str, batch_size: int = 32, noise_std: float = 0.0):
+def make_predictions(model, dataset, device: str, batch_size: int = 32, epsilon: float = 0.0):
     inputs = []
     y_preds = []
     y_trues = []
@@ -24,10 +33,28 @@ def make_predictions(model, dataset, device: str, batch_size: int = 32, noise_st
 
     for data in tqdm(loader):
         images = data['image'].to(device)
-        noise = torch.randn_like(images) * noise_std
-        images = images + noise
+        labels = data['label'].to(device)
+
+        images.requires_grad = True
 
         y_pred, log_param = model(images)
+
+        loss = model.loss_fn(y_pred, labels, log_param)
+
+        # Zero all existing gradients
+        model.zero_grad()
+
+        # Calculate gradients of model in backward pass
+        loss.backward()
+
+        # Collect datagrad
+        data_grad = images.grad.data
+
+        # Call FGSM Attack
+        perturbed_data = fgsm_attack(images, epsilon, data_grad)
+
+        # Predict on the perturbed image
+        y_pred, log_param = model(perturbed_data)
 
         y_pred = y_pred.cpu().detach()
         log_param = log_param.cpu().detach()
@@ -157,7 +184,7 @@ def main(
     model.to(device)
 
     for dataset_name, dataset_path in datasets:
-        for noise_level in [0, 0.01]:
+        for noise_level in [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40]:
             dataset = NYUv2DepthDataset(
                 dataset_path=dataset_path,
                 normalize=True,
