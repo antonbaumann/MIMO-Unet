@@ -190,7 +190,7 @@ def main(
 
     for dataset_name, dataset_path in datasets:
         # for noise_level in [0.00, 0.02, 0.04, 0.06, 0.08, 0.10]:
-        for noise_level in [0.00, 0.04]:
+        for noise_level in [0.00, 0.02, 0.04]:
             dataset = NYUv2DepthDataset(
                 dataset_path=dataset_path,
                 normalize=True,
