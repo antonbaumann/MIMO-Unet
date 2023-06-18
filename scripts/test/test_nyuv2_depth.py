@@ -189,7 +189,8 @@ def main(
     model.to(device)
 
     for dataset_name, dataset_path in datasets:
-        for noise_level in [0.00, 0.02, 0.04, 0.06, 0.08, 0.10]:
+        # for noise_level in [0.00, 0.02, 0.04, 0.06, 0.08, 0.10]:
+        for noise_level in [0.00, 0.04]:
             dataset = NYUv2DepthDataset(
                 dataset_path=dataset_path,
                 normalize=True,
@@ -251,7 +252,7 @@ if __name__ == "__main__":
         monte_carlo_steps=args.monte_carlo_steps,
         datasets=[
             ("test", os.path.join(args.dataset_dir, "depth_test.h5")),
-            ("ood", os.path.join(args.dataset_dir, "apolloscape_test.h5")),
+            # ("ood", os.path.join(args.dataset_dir, "apolloscape_test.h5")),
         ],
         result_dir=args.result_dir,
         device=args.device,
