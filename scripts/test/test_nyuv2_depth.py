@@ -200,7 +200,7 @@ def main(
             inputs, y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars = make_predictions(
                 model=model,
                 dataset=dataset,
-                batch_size=32,
+                batch_size=5,
                 device=device,
                 epsilon=noise_level,
             )
