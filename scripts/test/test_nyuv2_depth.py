@@ -149,7 +149,7 @@ def compute_ppf(params):
     p, y_pred, aleatoric_std, distribution = params
     return distribution.ppf(p, loc=y_pred, scale=aleatoric_std / np.sqrt(2))
     
-def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
+def create_calibration_plot(df: pd.DataFrame, distribution, processes) -> pd.DataFrame:
     
     y_true = df['y_true'].to_numpy()
     y_pred = df['y_pred'].to_numpy()
@@ -158,7 +158,7 @@ def create_calibration_plot(df: pd.DataFrame, distribution) -> pd.DataFrame:
     expected_p = np.arange(41) / 40.
 
     print('- computing ppfs')
-    with mp.Pool(processes=mp.cpu_count()) as pool:
+    with mp.Pool(processes=processes) as pool:
         params = [(p, y_pred, aleatoric_std, distribution) for p in expected_p]
         results = pool.imap(compute_ppf, params, chunksize=1)
         ppfs = np.array(list(tqdm(results, total=len(expected_p))))
@@ -177,6 +177,7 @@ def main(
     datasets: List[Tuple[str, str]],
     result_dir: str,
     device: str,
+    processes: int = None,
 ) -> None:
     result_dir = Path(result_dir)
     result_dir.mkdir(parents=True, exist_ok=False)
@@ -227,9 +228,10 @@ def main(
             df_cutoff = create_precision_recall_plot(df)
             df_cutoff.to_csv(result_dir / f"{dataset_name}_{noise_level}_precision_recall.csv", index=False)
             
-            # print(f"Creating data for calibration plot on {dataset_name}...")
-            # df_calibration = create_calibration_plot(df, scipy.stats.norm)
-            # df_calibration.to_csv(result_dir / f"{dataset_name}_{noise_level}_calibration.csv", index=False)
+            print(f"Creating data for calibration plot on {dataset_name}...")
+            processes = mp.cpu_count() if processes is None else processes
+            df_calibration = create_calibration_plot(df, scipy.stats.norm, processes=processes)
+            df_calibration.to_csv(result_dir / f"{dataset_name}_{noise_level}_calibration.csv", index=False)
 
             print(f"Finished processing dataset `{dataset_name}`!")
 
@@ -240,6 +242,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_dir", type=str, required=True)
     parser.add_argument("--monte_carlo_steps", type=int, default=0)
     parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--processes", type=int, default=None)
 
     args = parser.parse_args()
 
@@ -252,4 +255,5 @@ if __name__ == "__main__":
         ],
         result_dir=args.result_dir,
         device=args.device,
+        processes=args.processes,
     )
