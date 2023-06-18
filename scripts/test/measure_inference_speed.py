@@ -18,7 +18,7 @@ def main(
 
     # INIT LOGGERS
     starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-    repetitions = 300
+    repetitions = 1000
     timings=np.zeros((repetitions,1))
 
     #GPU-WARM-UP
