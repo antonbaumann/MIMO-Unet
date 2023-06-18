@@ -23,7 +23,7 @@ def fgsm_attack(image, epsilon, data_grad):
     # Return the perturbed image
     return perturbed_image
 
-def make_predictions(model, dataset, device: str, batch_size: int = 32, epsilon: float = 0.0):
+def make_predictions(model, dataset, device: str, batch_size: int = 5, epsilon: float = 0.0):
     inputs = []
     y_preds = []
     y_trues = []
