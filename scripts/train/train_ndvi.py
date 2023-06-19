@@ -99,7 +99,7 @@ if __name__ == "__main__":
         help="Specify the maximum number of epochs to train.",
     )
     parser.add_argument(
-        --"--project",
+        "--project",
         type=str,
         default="MIMO Sen12TP",
         help="Specify the name of the wandb project.",
