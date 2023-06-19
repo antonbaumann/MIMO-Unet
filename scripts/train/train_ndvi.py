@@ -59,7 +59,7 @@ def main(args: Namespace):
         seed=args.seed,
     )
 
-    wandb_logger = WandbLogger(project=parser.project)
+    wandb_logger = WandbLogger(project=args.project)
     wandb_logger.experiment.config.update(vars(args))
 
     trainer = pl.Trainer(
