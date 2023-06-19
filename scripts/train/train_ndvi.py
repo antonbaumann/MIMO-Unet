@@ -59,15 +59,14 @@ def main(args: Namespace):
         seed=args.seed,
     )
 
-    wandb_logger = WandbLogger(project="MIMO Sen12TP")
-    wandb_logger.watch(model, log="all", log_freq=500)
+    wandb_logger = WandbLogger(project=parser.project)
     wandb_logger.experiment.config.update(vars(args))
 
     trainer = pl.Trainer(
         callbacks=default_callbacks(), 
         accelerator='gpu', 
         devices=1,
-        precision=32,
+        precision=16,
         max_epochs=args.max_epochs,
         default_root_dir=args.checkpoint_path,
         log_every_n_steps=300,
@@ -98,6 +97,12 @@ if __name__ == "__main__":
         type=int,
         default=100,
         help="Specify the maximum number of epochs to train.",
+    )
+    parser.add_argument(
+        --"--project",
+        type=str,
+        default="MIMO Sen12TP",
+        help="Specify the name of the wandb project.",
     )
     parser = add_datamodule_args(parser)
     parser = MimoUnetModel.add_model_specific_args(parser)
