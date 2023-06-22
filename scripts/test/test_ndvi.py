@@ -24,48 +24,29 @@ def fgsm_attack(image, epsilon, data_grad):
     # Return the perturbed image
     return perturbed_image
 
-def make_predictions(model, dataset, device: str, batch_size: int = 5, epsilon: float = 0.0):
+def make_predictions(model, dataset, device: str, batch_size: int = 5, num_workers: int = 30):
     inputs = []
     y_preds = []
     y_trues = []
     log_params = []
     
-    loader = DataLoader(dataset, batch_size=batch_size)
+    loader = DataLoader(
+        dataset, 
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+    )
 
     for data in tqdm(loader):
         images = data['image'].to(device)
-        labels = data['label'].cpu()
-
-        labels = labels.unsqueeze(1)
-        labels = labels.repeat(1, model.num_subnetworks, 1, 1, 1)
-
-        images.requires_grad = True
-        labels.requires_grad = True
-
         y_pred, log_param = model(images)
-
-        loss = model.loss_fn(y_pred, log_param, labels)
-
-        # Zero all existing gradients
-        model.zero_grad()
-
-        # Calculate gradients of model in backward pass
-        loss.backward()
-
-        # Collect datagrad
-        data_grad = images.grad.data
-
-        # Call FGSM Attack
-        perturbed_data = fgsm_attack(images, epsilon, data_grad)
-
-        # Predict on the perturbed image
-        y_pred, log_param = model(perturbed_data)
 
         y_pred = y_pred.cpu().detach()
         log_param = log_param.cpu().detach()
         y_true = data['label'].cpu().detach()
 
-        inputs.append(perturbed_data.cpu().detach())
+        inputs.append(images.cpu().detach())
         y_preds.append(y_pred)
         y_trues.append(y_true)
         log_params.append(log_param)
@@ -192,6 +173,7 @@ def main(
             model_targets=['NDVI'],
             transform=sen12tp.utils.min_max_transform,
         )
+
 
         print(f"Making predictions ...")
         inputs, y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars = make_predictions(
