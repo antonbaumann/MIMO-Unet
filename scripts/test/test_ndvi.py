@@ -173,6 +173,7 @@ def main(
         stride=249,
         model_inputs=['VV_sigma0', 'VH_sigma0'],
         model_targets=['NDVI'],
+        transform=sen12tp.utils.min_max_transform,
         clip_transform=sen12tp.utils.default_clipping_transform,
     )
 
