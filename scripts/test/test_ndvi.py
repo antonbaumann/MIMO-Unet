@@ -209,7 +209,7 @@ def main(
     
     print(f"Creating data for calibration plot...")
     processes = min(mp.cpu_count(), processes) 
-    df_calibration = create_calibration_plot(df, scipy.stats.norm, processes=processes, num_samples=200_000_000)
+    df_calibration = create_calibration_plot(df, scipy.stats.norm, processes=processes, num_samples=100_000_000)
     df_calibration.to_csv(result_dir / f"calibration.csv", index=False)
 
     print(f"Finished processing dataset!")
