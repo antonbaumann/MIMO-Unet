@@ -44,6 +44,7 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
 
         y_pred = y_pred.cpu().detach()
         log_param = log_param.cpu().detach()
+
         y_true = data['label'].cpu().detach()
 
         inputs.append(images.cpu().detach())
@@ -75,7 +76,8 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
 def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars):
     data = torch.stack([
         y_preds.flatten(),
-        y_trues.flatten(), 
+        y_trues.flatten(),
+        torch.abs(y_trues.flatten() - y_preds.flatten()),
         aleatoric_vars.sqrt().flatten(),
         epistemic_vars.sqrt().flatten(),  
         combined_vars.sqrt().flatten(),  
@@ -83,7 +85,7 @@ def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined
 
     df = pd.DataFrame(
         data=data.cpu().numpy(),
-        columns=['y_pred', 'y_true', 'aleatoric_std', 'epistemic_std', 'combined_std']
+        columns=['y_pred', 'y_true', 'error', 'aleatoric_std', 'epistemic_std', 'combined_std']
     )
     return df
 
