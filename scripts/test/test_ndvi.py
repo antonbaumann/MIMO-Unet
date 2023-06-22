@@ -73,16 +73,16 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
 
 
 def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars):
-    data = np.stack([
-        y_preds.numpy().flatten(),
-        y_trues.numpy().flatten(), 
-        np.sqrt(aleatoric_vars.numpy()).flatten(),
-        np.sqrt(epistemic_vars.numpy()).flatten(),  
-        np.sqrt(combined_vars.numpy()).flatten(),  
+    data = torch.stack([
+        y_preds.flatten(),
+        y_trues.flatten(), 
+        aleatoric_vars.sqrt().flatten(),
+        epistemic_vars.sqrt().flatten(),  
+        combined_vars.sqrt().flatten(),  
     ], axis=0).T
-    
+
     df = pd.DataFrame(
-        data=data,
+        data=data.cpu().numpy(),
         columns=['y_pred', 'y_true', 'aleatoric_std', 'epistemic_std', 'combined_std']
     )
     return df
