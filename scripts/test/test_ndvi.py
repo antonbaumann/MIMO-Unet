@@ -198,7 +198,6 @@ def main(
         aleatoric_vars=aleatoric_vars,
         epistemic_vars=epistemic_vars,
         combined_vars=combined_vars,
-        num_samples=1e7,
     )
 
     print(f"Saving dataframes ...")
