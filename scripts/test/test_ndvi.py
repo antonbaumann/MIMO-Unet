@@ -208,7 +208,7 @@ def main(
     df_cutoff.to_csv(result_dir / f'precision_recall.csv', index=False)
     
     print(f"Creating data for calibration plot...")
-    processes = max(mp.cpu_count(), 5, processes) 
+    processes = max(mp.cpu_count(), processes) 
     df_calibration = create_calibration_plot(df, scipy.stats.norm, processes=processes)
     df_calibration.to_csv(result_dir / f"calibration.csv", index=False)
 
