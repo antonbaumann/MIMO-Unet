@@ -191,14 +191,13 @@ def main(
             model_inputs=['VV_sigma0', 'VH_sigma0'],
             model_targets=['NDVI'],
             transform=sen12tp.utils.min_max_transform,
-            num_workers=processes,
         )
 
         print(f"Making predictions ...")
         inputs, y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars = make_predictions(
             model=model,
             dataset=dataset,
-            batch_size=5,
+            batch_size=batch_size,
             device=device,
             epsilon=noise_level,
         )
