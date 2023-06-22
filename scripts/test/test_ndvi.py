@@ -73,7 +73,7 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
     )
 
 
-def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars, num_samples: int):
+def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars):
     data = torch.stack([
         y_preds.flatten(),
         y_trues.flatten(),
@@ -127,7 +127,8 @@ def compute_ppf(params):
     p, y_pred, aleatoric_std, distribution = params
     return distribution.ppf(p, loc=y_pred, scale=aleatoric_std / np.sqrt(2))
     
-def create_calibration_plot(df: pd.DataFrame, distribution, processes) -> pd.DataFrame:
+def create_calibration_plot(df: pd.DataFrame, distribution, processes, num_samples: int) -> pd.DataFrame:
+    df = df.sample(n=num_samples, replace=False)
     y_true = df['y_true'].to_numpy()
     y_pred = df['y_pred'].to_numpy()
     aleatoric_std = df['aleatoric_std'].to_numpy()
@@ -209,7 +210,7 @@ def main(
     
     print(f"Creating data for calibration plot...")
     processes = max(mp.cpu_count(), processes) 
-    df_calibration = create_calibration_plot(df, scipy.stats.norm, processes=processes)
+    df_calibration = create_calibration_plot(df, scipy.stats.norm, processes=processes, num_samples=1e7)
     df_calibration.to_csv(result_dir / f"calibration.csv", index=False)
 
     print(f"Finished processing dataset!")
