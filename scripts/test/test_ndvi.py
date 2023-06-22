@@ -185,7 +185,7 @@ def main(
 
     for noise_level in [0.00, 0.02, 0.04]:
         dataset = SEN12TP(
-            dataset_path=dataset_path,
+            path=dataset_path,
             batch_size=batch_size,
             patch_size=256,
             stride=249,
