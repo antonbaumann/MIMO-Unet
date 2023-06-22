@@ -11,7 +11,7 @@ import os
 import multiprocessing as mp
 
 from models.ensemble import EnsembleModule
-from sen12tp.dataset import SEN12TP
+from sen12tp.dataset import SEN12TP, Patchsize
 import sen12tp.utils
 
 def fgsm_attack(image, epsilon, data_grad):
@@ -186,8 +186,7 @@ def main(
     for noise_level in [0.00, 0.02, 0.04]:
         dataset = SEN12TP(
             path=dataset_path,
-            batch_size=batch_size,
-            patch_size=256,
+            patch_size=Patchsize(256, 256),
             stride=249,
             model_inputs=['VV_sigma0', 'VH_sigma0'],
             model_targets=['NDVI'],
