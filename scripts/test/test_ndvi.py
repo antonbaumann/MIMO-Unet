@@ -246,6 +246,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(
+        dataset_path=args.dataset_dir,
         model_checkpoint_paths=args.model_checkpoint_paths,
         monte_carlo_steps=args.monte_carlo_steps,
         result_dir=args.result_dir,
