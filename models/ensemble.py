@@ -58,7 +58,6 @@ class EnsembleModule(pl.LightningModule):
         for model in self.models:
             model.to(self.device)
             x_rep = repeat_subnetworks(x, num_subnetworks=model.num_subnetworks)
-            print(x_rep.shape)
             
             for _ in range(max(1, self.monte_carlo_steps)):
                 p1, p2 = model(x_rep)
