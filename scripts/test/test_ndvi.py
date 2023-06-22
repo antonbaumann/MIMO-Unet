@@ -73,7 +73,7 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
     )
 
 
-def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars):
+def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars, num_samples: int):
     data = torch.stack([
         y_preds.flatten(),
         y_trues.flatten(),
@@ -197,6 +197,7 @@ def main(
         aleatoric_vars=aleatoric_vars,
         epistemic_vars=epistemic_vars,
         combined_vars=combined_vars,
+        num_samples=1e7,
     )
 
     print(f"Saving dataframes ...")
@@ -220,7 +221,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_dir", type=str, required=True)
     parser.add_argument("--monte_carlo_steps", type=int, default=0)
     parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--processes", type=int, default=None)
+    parser.add_argument("--processes", type=int, default=2)
 
     args = parser.parse_args()
 
