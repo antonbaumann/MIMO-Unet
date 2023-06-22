@@ -24,7 +24,7 @@ def fgsm_attack(image, epsilon, data_grad):
     # Return the perturbed image
     return perturbed_image
 
-def make_predictions(model, dataset, device: str, batch_size: int = 5, epsilon: float = 0.0, num_workers=30):
+def make_predictions(model, dataset, device: str, batch_size: int = 5, num_workers=30):
     inputs = []
     y_preds = []
     y_trues = []
@@ -40,38 +40,13 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, epsilon: 
 
     for data in tqdm(loader):
         images = data['image'].to(device)
-        labels = data['label'].cpu()
-
-        labels = labels.unsqueeze(1)
-        labels = labels.repeat(1, model.num_subnetworks, 1, 1, 1)
-
-        images.requires_grad = True
-        labels.requires_grad = True
-
         y_pred, log_param = model(images)
-
-        loss = model.loss_fn(y_pred, log_param, labels)
-
-        # Zero all existing gradients
-        model.zero_grad()
-
-        # Calculate gradients of model in backward pass
-        loss.backward()
-
-        # Collect datagrad
-        data_grad = images.grad.data
-
-        # Call FGSM Attack
-        perturbed_data = fgsm_attack(images, epsilon, data_grad)
-
-        # Predict on the perturbed image
-        y_pred, log_param = model(perturbed_data)
 
         y_pred = y_pred.cpu().detach()
         log_param = log_param.cpu().detach()
         y_true = data['label'].cpu().detach()
 
-        inputs.append(perturbed_data.cpu().detach())
+        inputs.append(images.cpu().detach())
         y_preds.append(y_pred)
         y_trues.append(y_true)
         log_params.append(log_param)
@@ -189,55 +164,52 @@ def main(
     )
     model.to(device)
 
-    for noise_level in [0.00, 0.02, 0.04]:
-        dataset = SEN12TP(
-            path=dataset_path,
-            patch_size=Patchsize(256, 256),
-            stride=249,
-            model_inputs=['VV_sigma0', 'VH_sigma0'],
-            model_targets=['NDVI'],
-            clip_transform=sen12tp.utils.default_clipping_transform,
-        )
+    dataset = SEN12TP(
+        path=dataset_path,
+        patch_size=Patchsize(256, 256),
+        stride=249,
+        model_inputs=['VV_sigma0', 'VH_sigma0'],
+        model_targets=['NDVI'],
+        clip_transform=sen12tp.utils.default_clipping_transform,
+    )
 
+    print(f"Making predictions ...")
+    inputs, y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars = make_predictions(
+        model=model,
+        dataset=dataset,
+        batch_size=batch_size,
+        device=device,
+    )
 
-        print(f"Making predictions ...")
-        inputs, y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars = make_predictions(
-            model=model,
-            dataset=dataset,
-            batch_size=batch_size,
-            device=device,
-            epsilon=noise_level,
-        )
+    print(f"Saving predictions ...")
+    np.save(result_dir / f"inputs.npy", inputs.numpy())
+    np.save(result_dir / f"y_preds.npy", y_preds.numpy())
+    np.save(result_dir / f"y_trues.npy", y_trues.numpy())
+    np.save(result_dir / f"aleatoric_vars.npy", aleatoric_vars.numpy())
+    np.save(result_dir / f"epistemic_vars.npy", epistemic_vars.numpy())
+    
+    print(f"Computing metrics ...")
+    df = convert_to_pandas(
+        y_preds=y_preds,
+        y_trues=y_trues,
+        aleatoric_vars=aleatoric_vars,
+        epistemic_vars=epistemic_vars,
+        combined_vars=combined_vars,
+    )
 
-        print(f"Saving predictions ...")
-        np.save(result_dir / f"eps{noise_level}_inputs.npy", inputs.numpy())
-        np.save(result_dir / f"eps{noise_level}_y_preds.npy", y_preds.numpy())
-        np.save(result_dir / f"eps{noise_level}_y_trues.npy", y_trues.numpy())
-        np.save(result_dir / f"eps{noise_level}_aleatoric_vars.npy", aleatoric_vars.numpy())
-        np.save(result_dir / f"eps{noise_level}_epistemic_vars.npy", epistemic_vars.numpy())
-        
-        print(f"Computing metrics ...")
-        df = convert_to_pandas(
-            y_preds=y_preds,
-            y_trues=y_trues,
-            aleatoric_vars=aleatoric_vars,
-            epistemic_vars=epistemic_vars,
-            combined_vars=combined_vars,
-        )
+    print(f"Saving dataframes ...")
+    df.to_pickle(result_dir / f"df_pixels.pkl")
+    
+    print(f"Creating data for precision-recall plot ...")
+    df_cutoff = create_precision_recall_plot(df)
+    df_cutoff.to_csv(result_dir / f'precision_recall.csv', index=False)
+    
+    print(f"Creating data for calibration plot...")
+    processes = max(mp.cpu_count(), 5, processes) 
+    df_calibration = create_calibration_plot(df, scipy.stats.norm, processes=processes)
+    df_calibration.to_csv(result_dir / f"calibration.csv", index=False)
 
-        print(f"Saving dataframes ...")
-        df.to_pickle(result_dir / f"eps{noise_level}_metrics.pkl")
-        
-        print(f"Creating data for precision-recall plot ...")
-        df_cutoff = create_precision_recall_plot(df)
-        df_cutoff.to_csv(result_dir / f'eps{noise_level}_precision_recall.csv', index=False)
-        
-        print(f"Creating data for calibration plot...")
-        processes = max(mp.cpu_count(), 5, processes) 
-        df_calibration = create_calibration_plot(df, scipy.stats.norm, processes=processes)
-        df_calibration.to_csv(result_dir / f"eps{noise_level}_calibration.csv", index=False)
-
-        print(f"Finished processing dataset!")
+    print(f"Finished processing dataset!")
 
 if __name__ == "__main__":
     parser = ArgumentParser()
