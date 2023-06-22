@@ -11,7 +11,8 @@ import os
 import multiprocessing as mp
 
 from models.ensemble import EnsembleModule
-from datasets.nyuv2 import NYUv2DepthDataset
+from sen12tp.dataset import SEN12TP
+import sen12tp.utils
 
 def fgsm_attack(image, epsilon, data_grad):
     # Collect the element-wise sign of the data gradient
@@ -125,11 +126,6 @@ def compute_uncertainties(criterion, y_preds, log_params):
     return aleatoric_variance, epistemic_variance
 
 
-def compute_metrics(df: pd.DataFrame) -> pd.DataFrame:
-    df['error'] = np.abs(df['y_pred'] - df['y_true'])
-    return df
-
-
 def create_precision_recall_plot(df: pd.DataFrame) -> pd.DataFrame:
     df = df.sort_values(by='combined_std', ascending=False)
     
@@ -149,7 +145,6 @@ def compute_ppf(params):
     return distribution.ppf(p, loc=y_pred, scale=aleatoric_std / np.sqrt(2))
     
 def create_calibration_plot(df: pd.DataFrame, distribution, processes) -> pd.DataFrame:
-    
     y_true = df['y_true'].to_numpy()
     y_pred = df['y_pred'].to_numpy()
     aleatoric_std = df['aleatoric_std'].to_numpy()
@@ -171,12 +166,13 @@ def create_calibration_plot(df: pd.DataFrame, distribution, processes) -> pd.Dat
 
 
 def main(
+    dataset_path: str,
     model_checkpoint_paths: List[str],
     monte_carlo_steps: int,
-    datasets: List[Tuple[str, str]],
     result_dir: str,
     device: str,
     processes: int = None,
+    batch_size: int = 5,
 ) -> None:
     result_dir = Path(result_dir)
     result_dir.mkdir(parents=True, exist_ok=False)
@@ -187,53 +183,56 @@ def main(
     )
     model.to(device)
 
-    for dataset_name, dataset_path in datasets:
-        # for noise_level in [0.00, 0.02, 0.04, 0.06, 0.08, 0.10]:
-        for noise_level in [0.00, 0.02, 0.04]:
-            dataset = NYUv2DepthDataset(
-                dataset_path=dataset_path,
-                normalize=True,
-            )
+    for noise_level in [0.00, 0.02, 0.04]:
+        dataset = SEN12TP(
+            dataset_path=dataset_path,
+            batch_size=batch_size,
+            patch_size=256,
+            stride=249,
+            model_inputs=['VV_sigma0', 'VH_sigma0'],
+            model_targets=['NDVI'],
+            transform=sen12tp.utils.min_max_transform,
+            num_workers=processes,
+        )
 
-            print(f"Making predictions on {dataset_name}...")
-            inputs, y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars = make_predictions(
-                model=model,
-                dataset=dataset,
-                batch_size=5,
-                device=device,
-                epsilon=noise_level,
-            )
+        print(f"Making predictions ...")
+        inputs, y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars = make_predictions(
+            model=model,
+            dataset=dataset,
+            batch_size=5,
+            device=device,
+            epsilon=noise_level,
+        )
 
-            print(f"Saving predictions on {dataset_name}...")
-            np.save(result_dir / f"{dataset_name}_{noise_level}_inputs.npy", inputs.numpy())
-            np.save(result_dir / f"{dataset_name}_{noise_level}_y_preds.npy", y_preds.numpy())
-            np.save(result_dir / f"{dataset_name}_{noise_level}_y_trues.npy", y_trues.numpy())
-            np.save(result_dir / f"{dataset_name}_{noise_level}_aleatoric_vars.npy", aleatoric_vars.numpy())
-            np.save(result_dir / f"{dataset_name}_{noise_level}_epistemic_vars.npy", epistemic_vars.numpy())
-            
-            print(f"Computing metrics on {dataset_name}...")
-            df = convert_to_pandas(
-                y_preds=y_preds,
-                y_trues=y_trues,
-                aleatoric_vars=aleatoric_vars,
-                epistemic_vars=epistemic_vars,
-                combined_vars=combined_vars,
-            )
-            df = compute_metrics(df)
+        print(f"Saving predictions ...")
+        np.save(result_dir / f"eps{noise_level}_inputs.npy", inputs.numpy())
+        np.save(result_dir / f"eps{noise_level}_y_preds.npy", y_preds.numpy())
+        np.save(result_dir / f"eps{noise_level}_y_trues.npy", y_trues.numpy())
+        np.save(result_dir / f"eps{noise_level}_aleatoric_vars.npy", aleatoric_vars.numpy())
+        np.save(result_dir / f"eps{noise_level}_epistemic_vars.npy", epistemic_vars.numpy())
+        
+        print(f"Computing metrics ...")
+        df = convert_to_pandas(
+            y_preds=y_preds,
+            y_trues=y_trues,
+            aleatoric_vars=aleatoric_vars,
+            epistemic_vars=epistemic_vars,
+            combined_vars=combined_vars,
+        )
 
-            print(f"Saving dataframes for {dataset_name}...")
-            df.to_pickle(result_dir / f"{dataset_name}_{noise_level}_metrics.pkl")
-            
-            print(f"Creating data for precision-recall plot on {dataset_name}...")
-            df_cutoff = create_precision_recall_plot(df)
-            df_cutoff.to_csv(result_dir / f"{dataset_name}_{noise_level}_precision_recall.csv", index=False)
-            
-            print(f"Creating data for calibration plot on {dataset_name}...")
-            processes = mp.cpu_count() if processes is None else processes
-            df_calibration = create_calibration_plot(df, scipy.stats.norm, processes=processes)
-            df_calibration.to_csv(result_dir / f"{dataset_name}_{noise_level}_calibration.csv", index=False)
+        print(f"Saving dataframes ...")
+        df.to_pickle(result_dir / f"eps{noise_level}_metrics.pkl")
+        
+        print(f"Creating data for precision-recall plot ...")
+        df_cutoff = create_precision_recall_plot(df)
+        df_cutoff.to_csv(result_dir / f'eps{noise_level}_precision_recall.csv', index=False)
+        
+        print(f"Creating data for calibration plot...")
+        processes = max(mp.cpu_count(), 5, processes) 
+        df_calibration = create_calibration_plot(df, scipy.stats.norm, processes=processes)
+        df_calibration.to_csv(result_dir / f"eps{noise_level}_calibration.csv", index=False)
 
-            print(f"Finished processing dataset `{dataset_name}`!")
+        print(f"Finished processing dataset!")
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -249,10 +248,6 @@ if __name__ == "__main__":
     main(
         model_checkpoint_paths=args.model_checkpoint_paths,
         monte_carlo_steps=args.monte_carlo_steps,
-        datasets=[
-            ("test", os.path.join(args.dataset_dir, "depth_test.h5")),
-            # ("ood", os.path.join(args.dataset_dir, "apolloscape_test.h5")),
-        ],
         result_dir=args.result_dir,
         device=args.device,
         processes=args.processes,
