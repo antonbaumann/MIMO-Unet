@@ -7,6 +7,9 @@ def main(
     model_checkpoint_paths: str,
     monte_carlo_steps: int = 0,
     device: str = "cuda",
+    in_channels: int = 3,
+    height: int = 128,
+    width: int = 160,
 ):
     model = EnsembleModule(
         checkpoint_paths=model_checkpoint_paths,
@@ -14,7 +17,7 @@ def main(
     )
     model.to(device)
 
-    dummy_input = torch.randn(1, 3, 128, 160, dtype=torch.float).to(device)
+    dummy_input = torch.randn(1, in_channels, height, width, dtype=torch.float).to(device)
 
     # INIT LOGGERS
     starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
@@ -46,6 +49,9 @@ if __name__ == "__main__":
     parser.add_argument("--model_checkpoint_paths", nargs="+", type=str, required=True)
     parser.add_argument("--monte_carlo_steps", type=int, default=0)
     parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--in_channels", type=int, required=True)
+    parser.add_argument("--height", type=int, required=True)
+    parser.add_argument("--width", type=int, required=True)
 
     args = parser.parse_args()
 
@@ -53,4 +59,8 @@ if __name__ == "__main__":
         model_checkpoint_paths=args.model_checkpoint_paths,
         monte_carlo_steps=args.monte_carlo_steps,
         device=args.device,
+
+        in_channels=args.in_channels,
+        height=args.height,
+        width=args.width,
     )
