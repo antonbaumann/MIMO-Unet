@@ -17,7 +17,7 @@ def main(
     )
     model.to(device)
 
-    dummy_input = torch.randn(1, model.num_subnetworks, in_channels, height, width, dtype=torch.float).to(device)
+    dummy_input = torch.randn(1, in_channels, height, width, dtype=torch.float).to(device)
 
     # INIT LOGGERS
     starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
