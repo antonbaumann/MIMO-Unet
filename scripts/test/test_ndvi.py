@@ -74,7 +74,7 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
     
     return (
         inputs,
-        y_preds.mean(axis=1)[:, 0], 
+        y_preds[:, 0], 
         y_trues[:, 0], 
         aleatoric_vars[:, 0], 
         epistemic_vars[:, 0],
