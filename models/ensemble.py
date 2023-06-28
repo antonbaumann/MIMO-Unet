@@ -92,7 +92,7 @@ class EnsembleModule(pl.LightningModule):
         p1 = torch.cat(p1_list, dim=1)
         p2 = torch.cat(p2_list, dim=1)
 
-        if self.return_raw_predictions:
+        if not self.return_raw_predictions:
             mean, aleatoric_variance, epistemic_variance = compute_uncertainties(
                 self.loss_fn,
                 y_preds=p1,
