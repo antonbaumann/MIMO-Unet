@@ -39,7 +39,6 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
         pin_memory=True,
     )
 
-    i = 0
     for data in tqdm(loader):
         images = data['image'].to(device)
         y_pred, aleatoric_var, epistemic_var = model(images)
@@ -55,10 +54,6 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
         y_trues.append(y_true)
         aleatoric_vars.append(aleatoric_var)
         epistemic_vars.append(epistemic_var)
-
-        i += 1
-        if i > 5:
-            break
 
     inputs = torch.cat(inputs, dim=0)
     y_preds = torch.cat(y_preds, dim=0).clip(min=0, max=1)
