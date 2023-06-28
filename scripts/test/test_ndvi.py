@@ -28,7 +28,8 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
     inputs = []
     y_preds = []
     y_trues = []
-    log_params = []
+    aleatoric_vars = []
+    epistemic_vars = []
     
     loader = DataLoader(
         dataset, 
@@ -40,36 +41,33 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
 
     for data in tqdm(loader):
         images = data['image'].to(device)
-        y_pred, log_param = model(images)
+        y_pred, aleatoric_var, epistemic_var = model(images)
 
         y_pred = y_pred.cpu().detach()
-        log_param = log_param.cpu().detach()
+        aleatoric_var = aleatoric_var.cpu().detach()
+        epistemic_var = epistemic_var.cpu().detach()
 
         y_true = data['label'].cpu().detach()
 
         inputs.append(images.cpu().detach())
         y_preds.append(y_pred)
         y_trues.append(y_true)
-        log_params.append(log_param)
+        aleatoric_vars.append(aleatoric_var)
+        epistemic_vars.append(epistemic_var)
 
     inputs = torch.cat(inputs, dim=0)
     y_preds = torch.cat(y_preds, dim=0).clip(min=0, max=1)
     y_trues = torch.cat(y_trues, dim=0).clip(min=0, max=1)
-    log_params = torch.cat(log_params, dim=0)
-    
-    aleatoric_var, epistemic_var = compute_uncertainties(
-        model.loss_fn,
-        y_preds=y_preds,
-        log_params=log_params,
-    )
+    aleatoric_vars = torch.cat(aleatoric_vars, dim=0)
+    epistemic_vars = torch.cat(epistemic_vars, dim=0)
     
     return (
         inputs,
         y_preds.mean(axis=1)[:, 0], 
         y_trues[:, 0], 
-        aleatoric_var[:, 0], 
-        epistemic_var[:, 0],
-        aleatoric_var[:, 0] + epistemic_var[:, 0],
+        aleatoric_vars[:, 0], 
+        epistemic_vars[:, 0],
+        aleatoric_vars[:, 0] + epistemic_vars[:, 0],
     )
 
 
@@ -88,25 +86,6 @@ def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined
         columns=['y_pred', 'y_true', 'error', 'aleatoric_std', 'epistemic_std', 'combined_std']
     )
     return df
-
-
-def compute_uncertainties(criterion, y_preds, log_params):
-    """
-    Args:
-        y_preds: [B, S, C, H, W]
-    """
-    _, S, _, _, _ = y_preds.shape
-    
-    stds = criterion.std(y_preds, log_params)
-    aleatoric_variance = torch.square(stds).mean(dim=1)
-    
-    if S > 1:
-        y_preds_mean = y_preds.mean(dim=1, keepdims=True)
-        epistemic_variance = torch.square(y_preds - y_preds_mean).sum(dim=1) / (S - 1)
-    else:
-        epistemic_variance = torch.zeros_like(aleatoric_variance)
-        
-    return aleatoric_variance, epistemic_variance
 
 
 def create_precision_recall_plot(df: pd.DataFrame) -> pd.DataFrame:
@@ -164,6 +143,7 @@ def main(
     model = EnsembleModule(
         checkpoint_paths=model_checkpoint_paths,
         monte_carlo_steps=monte_carlo_steps,
+        return_raw_predictions=False,
     )
     model.to(device)
 
