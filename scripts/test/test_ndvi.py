@@ -65,12 +65,6 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
     y_trues = torch.cat(y_trues, dim=0).clip(min=0, max=1)
     aleatoric_vars = torch.cat(aleatoric_vars, dim=0)
     epistemic_vars = torch.cat(epistemic_vars, dim=0)
-
-    print(f"inputs.shape: {inputs.shape}")
-    print(f"y_preds.shape: {y_preds.shape}")
-    print(f"y_trues.shape: {y_trues.shape}")
-    print(f"aleatoric_vars.shape: {aleatoric_vars.shape}")
-    print(f"epistemic_vars.shape: {epistemic_vars.shape}")
     
     return (
         inputs,
