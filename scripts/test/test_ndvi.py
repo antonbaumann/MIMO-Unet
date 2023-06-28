@@ -47,6 +47,8 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
         aleatoric_var = aleatoric_var.cpu().detach()
         epistemic_var = epistemic_var.cpu().detach()
 
+        print(y_pred.shape, aleatoric_var.shape, epistemic_var.shape, data['label'].shape)
+
         y_true = data['label'].cpu().detach()
 
         inputs.append(images.cpu().detach())
