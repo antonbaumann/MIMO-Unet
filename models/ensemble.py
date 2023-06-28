@@ -6,15 +6,36 @@ from models.mimo_unet import MimoUnetModel
 def repeat_subnetworks(x, num_subnetworks):
     return x.unsqueeze(1).repeat(1, num_subnetworks, 1, 1, 1)
 
+def compute_uncertainties(criterion, y_preds, log_params):
+    """
+    Args:
+        y_preds: [B, S, C, H, W]
+    """
+    _, S, _, _, _ = y_preds.shape
+    
+    mean = criterion.mode(y_preds, log_params).mean(dim=1)
+    stds = criterion.std(y_preds, log_params)
+    aleatoric_variance = torch.square(stds).mean(dim=1)
+    
+    if S > 1:
+        y_preds_mean = y_preds.mean(dim=1, keepdims=True)
+        epistemic_variance = torch.square(y_preds - y_preds_mean).sum(dim=1) / (S - 1)
+    else:
+        epistemic_variance = torch.zeros_like(aleatoric_variance)
+        
+    return mean, aleatoric_variance, epistemic_variance
+
 class EnsembleModule(pl.LightningModule):
     def __init__(
         self,
         checkpoint_paths: List[str],
         monte_carlo_steps: int = 0,
+        return_raw_predictions=False,
     ):
         super().__init__()
         self.models = [MimoUnetModel.load_from_checkpoint(path) for path in checkpoint_paths]
         self.monte_carlo_steps = monte_carlo_steps
+        self.return_raw_predictions = return_raw_predictions
         
         for model in self.models:
             model.eval()
@@ -41,6 +62,10 @@ class EnsembleModule(pl.LightningModule):
     @property
     def num_subnetworks(self):
         return sum(model.num_subnetworks for model in self.models)
+    
+    @property
+    def loss_fn(self):
+        return self.models[0].loss_fn
         
     def forward(self, x: torch.Tensor):
         """
@@ -66,5 +91,13 @@ class EnsembleModule(pl.LightningModule):
         
         p1 = torch.cat(p1_list, dim=1)
         p2 = torch.cat(p2_list, dim=1)
+
+        if self.return_raw_predictions:
+            mean, aleatoric_variance, epistemic_variance = compute_uncertainties(
+                self.loss_fn,
+                y_preds=p1,
+                log_params=p2,
+            )
+            return mean, aleatoric_variance, epistemic_variance
         
         return p1, p2
