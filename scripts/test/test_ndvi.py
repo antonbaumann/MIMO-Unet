@@ -136,6 +136,8 @@ def main(
     device: str,
     processes: int = None,
     batch_size: int = 5,
+    patch_size: int = 256,
+    stride: int = 249,
 ) -> None:
     result_dir = Path(result_dir)
     result_dir.mkdir(parents=True, exist_ok=False)
@@ -149,8 +151,8 @@ def main(
 
     dataset = SEN12TP(
         path=dataset_path,
-        patch_size=Patchsize(256, 256),
-        stride=249,
+        patch_size=Patchsize(patch_size, patch_size),
+        stride=stride,
         model_inputs=['VV_sigma0', 'VH_sigma0'],
         model_targets=['NDVI'],
         transform=sen12tp.utils.min_max_transform,
@@ -203,6 +205,9 @@ if __name__ == "__main__":
     parser.add_argument("--monte_carlo_steps", type=int, default=0)
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--processes", type=int, default=2)
+    parser.add_argument("--batch_size", type=int, default=5)
+    parser.add_argument("--patch_size", type=int, default=256)
+    parser.add_argument("--stride", type=int, default=249)
 
     args = parser.parse_args()
 
@@ -213,4 +218,7 @@ if __name__ == "__main__":
         result_dir=args.result_dir,
         device=args.device,
         processes=args.processes,
+        batch_size=args.batch_size,
+        patch_size=args.patch_size,
+        stride=args.stride,
     )
