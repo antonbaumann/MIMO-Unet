@@ -263,13 +263,12 @@ class EvidentialLoss(torch.nn.Module):
 
     def forward(self, evidential_output, y_true, *, mask=None, reduce_mean=False) -> torch.Tensor:
         gamma, v, alpha, beta = torch.unbind(evidential_output, dim=1)
-        loss = self.evidential_loss_new(
+        loss = self.evidential_loss(
             mu=gamma,
             v=v,
             alpha=alpha,
             beta=beta,
             targets=y_true.squeeze(dim=1),
-            lam=self.coeff,
         )
 
         if mask is not None:
