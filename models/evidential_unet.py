@@ -80,7 +80,13 @@ class EvidentialUnetModel(pl.LightningModule):
         out = self.model(x)
         out = torch.squeeze(out, dim=1)
 
-        return out
+        mu, logv, logalpha, logbeta = torch.unbind(out, axis=1)
+
+        v = torch.log1p(logv)
+        alpha = torch.log1p(logalpha) + 1
+        beta = torch.log1p(logbeta)
+
+        return torch.stack([mu, v, alpha, beta], dim=1)
     
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> Dict[str, torch.Tensor]:
         image, label = batch["image"], batch["label"]

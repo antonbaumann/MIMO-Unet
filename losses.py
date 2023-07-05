@@ -245,14 +245,17 @@ class EvidentialLoss(torch.nn.Module):
         
         return loss
         
+    @staticmethod
     def mode(evidential_output):
         gamma, v, alpha, beta = torch.unbind(evidential_output, dim=1)
         return gamma
     
+    @staticmethod
     def aleatoric_var(evidential_output):
         gamma, v, alpha, beta = torch.unbind(evidential_output, dim=1)
         return beta / (alpha - 1)
     
+    @staticmethod
     def epistemic_var(evidential_output):
         gamma, v, alpha, beta = torch.unbind(evidential_output, dim=1)
         return beta / (v * (alpha - 1))
