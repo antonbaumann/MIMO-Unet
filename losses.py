@@ -191,49 +191,84 @@ class EvidentialLoss(torch.nn.Module):
         super().__init__()
         self.coeff = coeff
 
-    @staticmethod
-    def evidential_loss(mu, v, alpha, beta, targets):
-        """
-        Use Deep Evidential Regression Sum of Squared Error loss
+    # @staticmethod
+    # def evidential_loss(mu, v, alpha, beta, targets):
+    #     """
+    #     Use Deep Evidential Regression Sum of Squared Error loss
 
-        :mu: Pred mean parameter for NIG
-        :v: Pred lambda parameter for NIG
+    #     :mu: Pred mean parameter for NIG
+    #     :v: Pred lambda parameter for NIG
+    #     :alpha: predicted parameter for NIG
+    #     :beta: Predicted parmaeter for NIG
+    #     :targets: Outputs to predict
+
+    #     :return: Loss
+    #     """
+
+    #     # Calculate SOS
+    #     # Calculate gamma terms in front
+    #     def Gamma(x):
+    #         return torch.exp(torch.lgamma(x))
+
+    #     coeff_denom = 4 * Gamma(alpha) * v * torch.sqrt(beta)
+    #     coeff_num = Gamma(alpha - 0.5)
+    #     coeff = coeff_num / coeff_denom
+
+    #     # Calculate target dependent loss
+    #     second_term = 2 * beta * (1 + v)
+    #     second_term += (2 * alpha - 1) * v * torch.pow((targets - mu), 2)
+    #     L_SOS = coeff * second_term
+
+    #     # Calculate regularizer
+    #     L_REG = torch.pow((targets - mu), 2) * (2 * alpha + v)
+
+    #     loss_val = L_SOS + L_REG
+
+    #     return loss_val
+
+    def evidential_loss_new(mu, v, alpha, beta, targets, lam=1, epsilon=1e-4):
+        """
+        Use Deep Evidential Regression negative log likelihood loss + evidential
+            regularizer
+
+        :mu: pred mean parameter for NIG
+        :v: pred lam parameter for NIG
         :alpha: predicted parameter for NIG
         :beta: Predicted parmaeter for NIG
         :targets: Outputs to predict
 
         :return: Loss
         """
+        # Calculate NLL loss
+        twoBlambda = 2*beta*(1+v)
+        nll = 0.5*torch.log(np.pi/v) \
+            - alpha*torch.log(twoBlambda) \
+            + (alpha+0.5) * torch.log(v*(targets-mu)**2 + twoBlambda) \
+            + torch.lgamma(alpha) \
+            - torch.lgamma(alpha+0.5)
 
-        # Calculate SOS
-        # Calculate gamma terms in front
-        def Gamma(x):
-            return torch.exp(torch.lgamma(x))
+        L_NLL = nll #torch.mean(nll, dim=-1)
 
-        coeff_denom = 4 * Gamma(alpha) * v * torch.sqrt(beta)
-        coeff_num = Gamma(alpha - 0.5)
-        coeff = coeff_num / coeff_denom
+        # Calculate regularizer based on absolute error of prediction
+        error = torch.abs((targets - mu))
+        reg = error * (2 * v + alpha)
+        L_REG = reg #torch.mean(reg, dim=-1)
 
-        # Calculate target dependent loss
-        second_term = 2 * beta * (1 + v)
-        second_term += (2 * alpha - 1) * v * torch.pow((targets - mu), 2)
-        L_SOS = coeff * second_term
+        # Loss = L_NLL + L_REG
+        # TODO If we want to optimize the dual- of the objective use the line below:
+        loss = L_NLL + lam * (L_REG - epsilon)
 
-        # Calculate regularizer
-        L_REG = torch.pow((targets - mu), 2) * (2 * alpha + v)
-
-        loss_val = L_SOS + L_REG
-
-        return loss_val
+        return loss
 
     def forward(self, evidential_output, y_true, *, mask=None, reduce_mean=False) -> torch.Tensor:
         gamma, v, alpha, beta = torch.unbind(evidential_output, dim=1)
-        loss = self.evidential_loss(
+        loss = self.evidential_loss_new(
             mu=gamma,
             v=v,
             alpha=alpha,
             beta=beta,
             targets=y_true.squeeze(dim=1),
+            lam=self.coeff,
         )
 
         if mask is not None:
