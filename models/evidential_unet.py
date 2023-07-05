@@ -121,8 +121,8 @@ class EvidentialUnetModel(pl.LightningModule):
 
         # [B, 1, H, W]
         y_pred = self.loss_fn.mode(out).unsqueeze(dim=1)
-        aleatoric_std = self.loss_fn.aleatoric_var(out).unsqueeze(dim=1)
-        epistemic_std = self.loss_fn.epistemic_var(out).unsqueeze(dim=1)
+        aleatoric_std = self.loss_fn.aleatoric_var(out).unsqueeze(dim=1) ** 0.5
+        epistemic_std = self.loss_fn.epistemic_var(out).unsqueeze(dim=1) ** 0.5
 
         print('y_pred', y_pred.shape)
         print('aleatoric_std', aleatoric_std.shape)
