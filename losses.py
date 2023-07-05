@@ -192,50 +192,49 @@ class EvidentialLoss(torch.nn.Module):
         self.coeff = coeff
 
     @staticmethod
-    def NIG_NLL(y, gamma, v, alpha, beta, reduce=True):
-        twoBlambda = 2*beta*(1+v)
+    def evidential_loss(mu, v, alpha, beta, targets):
+        """
+        Use Deep Evidential Regression Sum of Squared Error loss
 
-        logTwoBlamda = torch.log(torch.clamp(twoBlambda, min=1e-4))
-        
-        nll = 0.5*torch.log(np.pi/v) \
-            - alpha*logTwoBlamda \
-            + (alpha+0.5) * torch.log(v*(y-gamma)**2 + twoBlambda)  \
-            + torch.lgamma(alpha) \
-            - torch.lgamma(alpha+0.5)
-        
-        return torch.mean(nll) if reduce else nll
+        :mu: Pred mean parameter for NIG
+        :v: Pred lambda parameter for NIG
+        :alpha: predicted parameter for NIG
+        :beta: Predicted parmaeter for NIG
+        :targets: Outputs to predict
 
-    def KL_NIG(mu1, v1, a1, b1, mu2, v2, a2, b2):
-        KL = 0.5*(a1-1)/b1 * (v2*torch.pow(mu2-mu1, 2))  \
-            + 0.5*v2/v1  \
-            - 0.5*torch.log(torch.abs(v2)/torch.abs(v1))  \
-            - 0.5 + a2*torch.log(b1/b2)  \
-            - (torch.lgamma(a1) - torch.lgamma(a2))  \
-            + (a1 - a2)*torch.digamma(a1)  \
-            - (b1 - b2)*a1/b1
-        return KL
+        :return: Loss
+        """
 
-    @staticmethod
-    def NIG_Reg(y, gamma, v, alpha, beta, omega=0.01, reduce=True, kl=False):
-        error = torch.abs(y-gamma)
+        # Calculate SOS
+        # Calculate gamma terms in front
+        def Gamma(x):
+            return torch.exp(torch.lgamma(x))
 
-        if kl:
-            kl = EvidentialLoss.KL_NIG(gamma, v, alpha, beta, gamma, omega, 1+omega, beta)
-            reg = error*kl
-        else:
-            evi = 2*v+(alpha)
-            reg = error*evi
+        coeff_denom = 4 * Gamma(alpha) * v * torch.sqrt(beta)
+        coeff_num = Gamma(alpha - 0.5)
+        coeff = coeff_num / coeff_denom
 
-        return torch.mean(reg) if reduce else reg
+        # Calculate target dependent loss
+        second_term = 2 * beta * (1 + v)
+        second_term += (2 * alpha - 1) * v * torch.pow((targets - mu), 2)
+        L_SOS = coeff * second_term
 
-    def EvidentialRegression(self, y_true, evidential_output):
-        gamma, v, alpha, beta = torch.unbind(evidential_output, dim=1)
-        loss_nll = EvidentialLoss.NIG_NLL(y_true, gamma, v, alpha, beta)
-        loss_reg = EvidentialLoss.NIG_Reg(y_true, gamma, v, alpha, beta)
-        return loss_nll + self.coeff * loss_reg
+        # Calculate regularizer
+        L_REG = torch.pow((targets - mu), 2) * (2 * alpha + v)
+
+        loss_val = L_SOS + L_REG
+
+        return loss_val
 
     def forward(self, evidential_output, y_true, *, mask=None, reduce_mean=False) -> torch.Tensor:
-        loss = self.EvidentialRegression(y_true=y_true, evidential_output=evidential_output)
+        gamma, v, alpha, beta = torch.unbind(evidential_output, dim=1)
+        loss = self.evidential_loss(
+            mu=gamma,
+            v=v,
+            alpha=alpha,
+            beta=beta,
+            targets=y_true,
+        )
 
         if mask is not None:
             loss = loss * mask
