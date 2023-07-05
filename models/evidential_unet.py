@@ -124,6 +124,10 @@ class EvidentialUnetModel(pl.LightningModule):
         aleatoric_std = self.loss_fn.aleatoric_var(out)
         epistemic_std = self.loss_fn.epistemic_var(out)
 
+        print('y_pred', y_pred.shape)
+        print('aleatoric_std', aleatoric_std.shape)
+        print('epistemic_std', epistemic_std.shape)
+
         self.log("val_loss", loss.mean(), batch_size=self.trainer.datamodule.batch_size)
         self._log_metrics(y_pred=y_pred, y_true=label, stage="val")
         self._log_uncertainties(aleatoric_std, epistemic_std)
