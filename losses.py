@@ -194,9 +194,13 @@ class EvidentialLoss(torch.nn.Module):
     @staticmethod
     def NIG_NLL(y, gamma, v, alpha, beta, reduce=True):
         twoBlambda = 2*beta*(1+v)
+
+        logTwoBlamda = torch.log(torch.clamp(twoBlambda, min=1e-5))
+
+
         
-        nll = 0.5*torch.log(torch.tensor(np.pi/v))  \
-            - alpha*torch.log(twoBlambda)  \
+        nll = 0.5*torch.log(np.pi/v) \
+            - alpha*logTwoBlamda \
             + (alpha+0.5) * torch.log(v*(y-gamma)**2 + twoBlambda)  \
             + torch.lgamma(alpha) \
             - torch.lgamma(alpha+0.5)
