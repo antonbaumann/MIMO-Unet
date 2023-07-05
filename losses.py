@@ -226,6 +226,7 @@ class EvidentialLoss(torch.nn.Module):
 
     #     return loss_val
 
+    @staticmethod
     def evidential_loss_new(mu, v, alpha, beta, targets, lam=1, epsilon=1e-4):
         """
         Use Deep Evidential Regression negative log likelihood loss + evidential
