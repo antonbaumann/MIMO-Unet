@@ -82,9 +82,9 @@ class EvidentialUnetModel(pl.LightningModule):
 
         mu, logv, logalpha, logbeta = torch.unbind(out, axis=1)
 
-        v = torch.nn.Softplus()(logv) + 1e-5
-        alpha = torch.nn.Softplus()(logalpha) + 1 + 1e-5
-        beta = torch.nn.Softplus()(logbeta) + 1e-5
+        v = torch.nn.Softplus()(logv)
+        alpha = torch.nn.Softplus()(logalpha) + 1
+        beta = torch.nn.Softplus()(logbeta)
 
         return torch.stack([mu, v, alpha, beta], dim=1)
     
