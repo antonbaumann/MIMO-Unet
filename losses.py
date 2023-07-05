@@ -226,41 +226,6 @@ class EvidentialLoss(torch.nn.Module):
 
         return loss_val
 
-    # @staticmethod
-    # def evidential_loss_new(mu, v, alpha, beta, targets, lam=1, epsilon=1e-4):
-    #     """
-    #     Use Deep Evidential Regression negative log likelihood loss + evidential
-    #         regularizer
-
-    #     :mu: pred mean parameter for NIG
-    #     :v: pred lam parameter for NIG
-    #     :alpha: predicted parameter for NIG
-    #     :beta: Predicted parmaeter for NIG
-    #     :targets: Outputs to predict
-
-    #     :return: Loss
-    #     """
-    #     # Calculate NLL loss
-    #     twoBlambda = 2*beta*(1+v)
-    #     nll = 0.5*torch.log(np.pi/v) \
-    #         - alpha*torch.log(twoBlambda) \
-    #         + (alpha+0.5) * torch.log(v*(targets-mu)**2 + twoBlambda) \
-    #         + torch.lgamma(alpha) \
-    #         - torch.lgamma(alpha+0.5)
-
-    #     L_NLL = nll #torch.mean(nll, dim=-1)
-
-    #     # Calculate regularizer based on absolute error of prediction
-    #     error = torch.abs((targets - mu))
-    #     reg = error * (2 * v + alpha)
-    #     L_REG = reg #torch.mean(reg, dim=-1)
-
-    #     # Loss = L_NLL + L_REG
-    #     # TODO If we want to optimize the dual- of the objective use the line below:
-    #     loss = L_NLL + lam * (L_REG - epsilon)
-
-    #     return loss
-
     def forward(self, evidential_output, y_true, *, mask=None, reduce_mean=False) -> torch.Tensor:
         gamma, v, alpha, beta = torch.unbind(evidential_output, dim=1)
         loss = self.evidential_loss(

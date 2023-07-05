@@ -112,7 +112,7 @@ def main(params: NYUv2DepthParams):
         callbacks=default_callbacks(), 
         accelerator='gpu', 
         devices=1,
-        precision=16,
+        precision=32,
         max_epochs=100,
         default_root_dir=params.checkpoint_path,
         log_every_n_steps=200,
