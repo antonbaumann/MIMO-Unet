@@ -114,7 +114,9 @@ class EvidentialUnetModel(pl.LightningModule):
         image, label = batch["image"], batch["label"]
         mask = batch["mask"] if "mask" in batch else None
 
+        print(image.shape)
         out = self(image)
+        print(out.shape)
 
         # [S, ]
         loss = self.loss_fn.forward(out, label, mask=mask, reduce_mean=False)
