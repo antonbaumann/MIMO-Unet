@@ -227,7 +227,7 @@ class EvidentialLoss(torch.nn.Module):
         return torch.mean(reg) if reduce else reg
 
     def EvidentialRegression(self, y_true, evidential_output):
-        gamma, v, alpha, beta = torch.split(evidential_output, 4, dim=-1)
+        gamma, v, alpha, beta = torch.split(evidential_output, 4, dim=1)
         loss_nll = EvidentialLoss.NIG_NLL(y_true, gamma, v, alpha, beta)
         loss_reg = EvidentialLoss.NIG_Reg(y_true, gamma, v, alpha, beta)
         return loss_nll + self.coeff * loss_reg
@@ -244,13 +244,13 @@ class EvidentialLoss(torch.nn.Module):
         return loss
         
     def mode(evidential_output):
-        gamma, v, alpha, beta = torch.split(evidential_output, 4, dim=-1)
+        gamma, v, alpha, beta = torch.split(evidential_output, 4, dim=1)
         return gamma
     
     def aleatoric_var(evidential_output):
-        gamma, v, alpha, beta = torch.split(evidential_output, 4, dim=-1)
+        gamma, v, alpha, beta = torch.split(evidential_output, 4, dim=1)
         return beta / (alpha - 1)
     
     def epistemic_var(evidential_output):
-        gamma, v, alpha, beta = torch.split(evidential_output, 4, dim=-1)
+        gamma, v, alpha, beta = torch.split(evidential_output, 4, dim=1)
         return beta / (v * (alpha - 1))
