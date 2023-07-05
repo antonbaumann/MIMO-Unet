@@ -214,9 +214,9 @@ class EvidentialLoss(torch.nn.Module):
         print(coeff_denom)
 
         coeff_num = Gamma(alpha - 0.5)
-        print(coeff_denom)
+        print(coeff_num)
         coeff = coeff_num / coeff_denom
-        print(coeff_denom)
+        print(coeff)
 
         # Calculate target dependent loss
         second_term = 2 * beta * (1 + v)
