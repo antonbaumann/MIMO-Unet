@@ -110,6 +110,8 @@ class EvidentialUnetModel(pl.LightningModule):
 
         out = self(image)
 
+        print(out.shape)
+
         # [S, ]
         loss = self.loss_fn.forward(out, label, mask=mask, reduce_mean=False)
 
