@@ -96,8 +96,8 @@ class EvidentialUnetModel(pl.LightningModule):
 
         loss = self.loss_fn(out, label, mask=mask)
         
-        y_pred = self.loss_fn.mode(out)
-        aleatoric_std = self.loss_fn.std(out) ** 0.5
+        y_pred = self.loss_fn.mode(out).unsqueeze(dim=1)
+        aleatoric_std = self.loss_fn.aleatoric_var(out).unsqueeze(dim=1) ** 0.5
 
         self._log_metrics(y_pred=y_pred, y_true=label, stage="train")
 
@@ -119,10 +119,10 @@ class EvidentialUnetModel(pl.LightningModule):
         # [S, ]
         loss = self.loss_fn.forward(out, label, mask=mask, reduce_mean=False)
 
-        # [B, S, 1, H, W]
-        y_pred = self.loss_fn.mode(out)
-        aleatoric_std = self.loss_fn.aleatoric_var(out)
-        epistemic_std = self.loss_fn.epistemic_var(out)
+        # [B, 1, H, W]
+        y_pred = self.loss_fn.mode(out).unsqueeze(dim=1)
+        aleatoric_std = self.loss_fn.aleatoric_var(out).unsqueeze(dim=1)
+        epistemic_std = self.loss_fn.epistemic_var(out).unsqueeze(dim=1)
 
         print('y_pred', y_pred.shape)
         print('aleatoric_std', aleatoric_std.shape)
