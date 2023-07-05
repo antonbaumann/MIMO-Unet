@@ -233,7 +233,7 @@ class EvidentialLoss(torch.nn.Module):
             v=v,
             alpha=alpha,
             beta=beta,
-            targets=y_true,
+            targets=y_true.unsqueeze(dim=1),
         )
 
         if mask is not None:
