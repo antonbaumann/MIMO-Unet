@@ -92,7 +92,7 @@ def main(params: NYUv2DepthParams):
     dm = NYUv2DepthDataModule.from_params(params)
 
     model = EvidentialUnetModel(
-        in_channels=3,
+        in_channels=2,
         out_channels=4,
         filter_base_count=params.filter_base_count,
         center_dropout_rate=params.center_dropout_rate,
