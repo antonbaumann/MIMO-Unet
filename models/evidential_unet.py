@@ -75,8 +75,10 @@ class EvidentialUnetModel(pl.LightningModule):
 
         assert C_in == self.in_channels, "channel dimension must match in_channels"
 
+        x = torch.unsqueeze(x, dim=1)
         # [B, C_out, H, W]
         out = self.model(x)
+        x = torch.squeeze(x, dim=1)
 
         return out
     
