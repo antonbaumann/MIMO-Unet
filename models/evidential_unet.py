@@ -82,9 +82,9 @@ class EvidentialUnetModel(pl.LightningModule):
 
         mu, logv, logalpha, logbeta = torch.unbind(out, axis=1)
 
-        v = torch.clamp(torch.log1p(logv) + 1e-4, max=5)
-        alpha = torch.clamp(torch.log1p(logalpha) + 1 + 1e-4, max=5)
-        beta = torch.clamp(torch.log1p(logbeta) + 1e-4, max=5)
+        v = torch.clamp(torch.log1p(logv) + 1e-5, max=10)
+        alpha = torch.clamp(torch.log1p(logalpha) + 1 + 1e-5, max=10)
+        beta = torch.clamp(torch.log1p(logbeta) + 1e-5, max=10)
 
         return torch.stack([mu, v, alpha, beta], dim=1)
     
