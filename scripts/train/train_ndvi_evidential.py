@@ -41,7 +41,7 @@ def main(args: Namespace):
 
     model = EvidentialUnetModel(
         in_channels=len(dm.model_inputs),
-        out_channels=len(dm.model_targets) * 2,
+        out_channels=4,
         filter_base_count=args.filter_base_count,
         center_dropout_rate=args.center_dropout_rate,
         final_dropout_rate=args.final_dropout_rate,
