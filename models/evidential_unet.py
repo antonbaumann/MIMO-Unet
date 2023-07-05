@@ -78,7 +78,7 @@ class EvidentialUnetModel(pl.LightningModule):
         x = torch.unsqueeze(x, dim=1)
         # [B, C_out, H, W]
         out = self.model(x)
-        x = torch.squeeze(x, dim=1)
+        out = torch.squeeze(out, dim=1)
 
         return out
     
