@@ -233,8 +233,6 @@ class EvidentialLoss(torch.nn.Module):
         return loss_nll + self.coeff * loss_reg
 
     def forward(self, evidential_output, y_true, *, mask=None, reduce_mean=False) -> torch.Tensor:
-        print('out', evidential_output.shape)
-        print('label', y_true.shape)
         loss = self.EvidentialRegression(y_true=y_true, evidential_output=evidential_output)
 
         if mask is not None:
