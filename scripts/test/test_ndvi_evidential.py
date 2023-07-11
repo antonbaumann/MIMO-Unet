@@ -132,6 +132,7 @@ def main(
     result_dir.mkdir(parents=True, exist_ok=False)
 
     model = EvidentialUnetModel.load_from_checkpoint(model_checkpoint_path)
+    model.eval()
     model.to(device)
 
     dataset = SEN12TP(
