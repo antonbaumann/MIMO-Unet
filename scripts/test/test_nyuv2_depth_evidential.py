@@ -163,6 +163,7 @@ def main(
     result_dir.mkdir(parents=True, exist_ok=False)
 
     model = EvidentialUnetModel.load_from_checkpoint(model_checkpoint_path)
+    model.eval()
     model.to(device)
 
     for dataset_name, dataset_path in datasets:
@@ -218,7 +219,6 @@ if __name__ == "__main__":
     parser.add_argument("--model_checkpoint_path", type=str, required=True)
     parser.add_argument("--result_dir", type=str, required=True)
     parser.add_argument("--dataset_dir", type=str, required=True)
-    parser.add_argument("--monte_carlo_steps", type=int, default=0)
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--processes", type=int, default=None)
 
