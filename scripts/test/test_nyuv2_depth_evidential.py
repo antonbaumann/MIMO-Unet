@@ -72,13 +72,6 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, epsilon: 
         aleatoric_vars.append(aleatoric_var)
         epistemic_vars.append(epistemic_var)
 
-
-    print('inputs', inputs[0].shape)
-    print('y_preds', y_preds[0].shape)
-    print('y_trues', y_trues[0].shape)
-    print('aleatoric_vars', aleatoric_vars[0].shape)
-    print('epistemic_vars', epistemic_vars[0].shape)
-
     inputs = torch.cat(inputs, dim=0)
     y_preds = torch.cat(y_preds, dim=0).clip(min=0, max=1)
     y_trues = torch.cat(y_trues, dim=0).clip(min=0, max=1)
@@ -96,6 +89,13 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, epsilon: 
 
 
 def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars):
+
+    print(y_preds.shape)
+    print(y_trues.shape)
+    print(aleatoric_vars.shape)
+    print(epistemic_vars.shape)
+    print(combined_vars.shape)
+
     data = np.stack([
         y_preds.numpy().flatten(),
         y_trues.numpy().flatten(), 
