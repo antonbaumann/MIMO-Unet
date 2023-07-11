@@ -41,36 +41,30 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, epsilon: 
 
         out = model(images)
 
-        # loss = model.loss_fn(out, labels).mean()
+        loss = model.loss_fn(out, labels).mean()
 
-        # # Zero all existing gradients
-        # model.zero_grad()
+        # Zero all existing gradients
+        model.zero_grad()
 
-        # # Calculate gradients of model in backward pass
-        # loss.backward()
+        # Calculate gradients of model in backward pass
+        loss.backward()
 
-        # # Collect datagrad
-        # data_grad = images.grad.data
+        # Collect datagrad
+        data_grad = images.grad.data
 
-        # # Call FGSM Attack
-        # perturbed_data = fgsm_attack(images, epsilon, data_grad)
+        # Call FGSM Attack
+        perturbed_data = fgsm_attack(images, epsilon, data_grad)
 
         # Predict on the perturbed image
-        # out = model(perturbed_data)
+        out = model(perturbed_data)
 
         out = out.cpu().detach()
-        y_true = data['label'].cpu().detach()
-
-        inputs.append(images.cpu().detach())
-        # inputs.append(perturbed_data.cpu().detach())
-
-
-        print(out.shape)
-
+        y_true = labels.cpu().detach()
         y_pred = model.loss_fn.mode(out).unsqueeze(dim=1)
         aleatoric_var = model.loss_fn.aleatoric_var(out).unsqueeze(dim=1)
         epistemic_var = model.loss_fn.epistemic_var(out).unsqueeze(dim=1)
 
+        inputs.append(perturbed_data.cpu().detach())
         y_preds.append(y_pred)
         y_trues.append(y_true)
         aleatoric_vars.append(aleatoric_var)
