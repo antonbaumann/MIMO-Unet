@@ -63,6 +63,8 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, epsilon: 
 
         inputs.append(perturbed_data.cpu().detach())
 
+        print(out.shape)
+
         y_pred = model.loss_fn.mode(out).unsqueeze(dim=1)
         aleatoric_var = model.loss_fn.aleatoric_var(out).unsqueeze(dim=1)
         epistemic_var = model.loss_fn.epistemic_var(out).unsqueeze(dim=1)
@@ -182,7 +184,6 @@ def main(
     model.to(device)
 
     for dataset_name, dataset_path in datasets:
-        # for noise_level in [0.00, 0.02, 0.04, 0.06, 0.08, 0.10]:
         for noise_level in [0.00, 0.02, 0.04]:
             dataset = NYUv2DepthDataset(
                 dataset_path=dataset_path,
