@@ -64,6 +64,11 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, epsilon: 
         aleatoric_var = model.loss_fn.aleatoric_var(out).unsqueeze(dim=1)
         epistemic_var = model.loss_fn.epistemic_var(out).unsqueeze(dim=1)
 
+        print(f"y_pred: {y_pred.shape}")
+        print(f"y_true: {y_true.shape}")
+        print(f"aleatoric_var: {aleatoric_var.shape}")
+        print(f"epistemic_var: {epistemic_var.shape}")
+
         inputs.append(perturbed_data.cpu().detach())
         y_preds.append(y_pred)
         y_trues.append(y_true)
@@ -100,25 +105,6 @@ def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined
         columns=['y_pred', 'y_true', 'aleatoric_std', 'epistemic_std', 'combined_std']
     )
     return df
-
-
-def compute_uncertainties(criterion, y_preds, log_params):
-    """
-    Args:
-        y_preds: [B, S, C, H, W]
-    """
-    _, S, _, _, _ = y_preds.shape
-    
-    stds = criterion.std(y_preds, log_params)
-    aleatoric_variance = torch.square(stds).mean(dim=1)
-    
-    if S > 1:
-        y_preds_mean = y_preds.mean(dim=1, keepdims=True)
-        epistemic_variance = torch.square(y_preds - y_preds_mean).sum(dim=1) / (S - 1)
-    else:
-        epistemic_variance = torch.zeros_like(aleatoric_variance)
-        
-    return aleatoric_variance, epistemic_variance
 
 
 def compute_metrics(df: pd.DataFrame) -> pd.DataFrame:
