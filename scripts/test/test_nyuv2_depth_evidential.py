@@ -34,7 +34,7 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, epsilon: 
 
     for data in tqdm(loader):
         images = data['image'].to(device)
-        labels = data['label'].cpu()
+        labels = data['label'].to(device)
 
         images.requires_grad = True
         labels.requires_grad = True
