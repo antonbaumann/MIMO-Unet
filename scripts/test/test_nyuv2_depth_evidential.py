@@ -80,7 +80,7 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, epsilon: 
     
     return (
         inputs,
-        y_preds.mean(axis=1)[:, 0], 
+        y_preds[:, 0], 
         y_trues[:, 0], 
         aleatoric_var[:, 0], 
         epistemic_var[:, 0],
@@ -89,13 +89,6 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, epsilon: 
 
 
 def convert_to_pandas(y_preds, y_trues, aleatoric_vars, epistemic_vars, combined_vars):
-
-    print(y_preds.shape)
-    print(y_trues.shape)
-    print(aleatoric_vars.shape)
-    print(epistemic_vars.shape)
-    print(combined_vars.shape)
-
     data = np.stack([
         y_preds.numpy().flatten(),
         y_trues.numpy().flatten(), 
