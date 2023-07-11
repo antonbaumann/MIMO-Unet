@@ -31,13 +31,13 @@ def make_predictions(model, dataset, device: str, batch_size: int = 5, num_worke
 
     for data in tqdm(loader):
         images = data['image'].to(device)
-        y_pred, aleatoric_var, epistemic_var = model(images)
-
-        y_pred = y_pred.cpu().detach()
-        aleatoric_var = aleatoric_var.cpu().detach()
-        epistemic_var = epistemic_var.cpu().detach()
-
         y_true = data['label'].cpu().detach()
+
+        out = model(images).cpu().detach()
+
+        y_pred = model.loss_fn.mode(out).unsqueeze(dim=1)
+        aleatoric_var = model.loss_fn.aleatoric_var(out).unsqueeze(dim=1)
+        epistemic_var = model.loss_fn.epistemic_var(out).unsqueeze(dim=1)
 
         inputs.append(images.cpu().detach())
         y_preds.append(y_pred)
@@ -120,8 +120,7 @@ def create_calibration_plot(df: pd.DataFrame, distribution, processes, num_sampl
 
 def main(
     dataset_path: str,
-    model_checkpoint_paths: List[str],
-    monte_carlo_steps: int,
+    model_checkpoint_path: str,
     result_dir: str,
     device: str,
     processes: int = None,
@@ -132,11 +131,7 @@ def main(
     result_dir = Path(result_dir)
     result_dir.mkdir(parents=True, exist_ok=False)
 
-    model = EnsembleModule(
-        checkpoint_paths=model_checkpoint_paths,
-        monte_carlo_steps=monte_carlo_steps,
-        return_raw_predictions=False,
-    )
+    model = EvidentialUnetModel.from_checkpoint(model_checkpoint_path)
     model.to(device)
 
     dataset = SEN12TP(
@@ -189,10 +184,9 @@ def main(
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--model_checkpoint_paths", nargs="+", type=str, required=True)
+    parser.add_argument("--model_checkpoint_path", type=str, required=True)
     parser.add_argument("--result_dir", type=str, required=True)
     parser.add_argument("--dataset_dir", type=str, required=True)
-    parser.add_argument("--monte_carlo_steps", type=int, default=0)
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--processes", type=int, default=2)
     parser.add_argument("--batch_size", type=int, default=5)
@@ -203,8 +197,7 @@ if __name__ == "__main__":
 
     main(
         dataset_path=args.dataset_dir,
-        model_checkpoint_paths=args.model_checkpoint_paths,
-        monte_carlo_steps=args.monte_carlo_steps,
+        model_checkpoint_path=args.model_checkpoint_path,
         result_dir=args.result_dir,
         device=args.device,
         processes=args.processes,
