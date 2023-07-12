@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 from abc import ABC, abstractmethod
 
 class UncertaintyLoss(torch.nn.Module, ABC):
@@ -28,8 +27,6 @@ class UncertaintyLoss(torch.nn.Module, ABC):
             return GaussianNLL()
         elif name == "laplace_nll":
             return LaplaceNLL()
-        elif name == "evidential":
-            return EvidentialLossSumOfSquares()
         else:
             raise ValueError(f"Unknown loss function: {name}")
 
@@ -194,6 +191,8 @@ class EvidentialLoss(torch.nn.Module):
     @staticmethod
     def evidential_loss(mu, v, alpha, beta, targets):
         """
+        Code from https://github.com/aamini/chemprop
+        
         Use Deep Evidential Regression Sum of Squared Error loss
 
         :mu: Pred mean parameter for NIG
