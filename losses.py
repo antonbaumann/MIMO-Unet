@@ -181,3 +181,80 @@ class LaplaceNLL(UncertaintyLoss):
             param = torch.log(param)
 
         return param
+
+
+class EvidentialLoss(torch.nn.Module):
+    def __init__(self, coeff: float) -> None:
+        super().__init__()
+        self.coeff = coeff
+
+    @staticmethod
+    def evidential_loss(mu, v, alpha, beta, targets):
+        """
+        Code from https://github.com/aamini/chemprop
+        
+        Use Deep Evidential Regression Sum of Squared Error loss
+
+        :mu: Pred mean parameter for NIG
+        :v: Pred lambda parameter for NIG
+        :alpha: predicted parameter for NIG
+        :beta: Predicted parmaeter for NIG
+        :targets: Outputs to predict
+
+        :return: Loss
+        """
+
+        # Calculate SOS
+        # Calculate gamma terms in front
+        def Gamma(x):
+            return torch.exp(torch.lgamma(x))
+
+        coeff_denom = 4 * Gamma(alpha) * v * torch.sqrt(beta)
+
+        coeff_num = Gamma(alpha - 0.5)
+        coeff = coeff_num / coeff_denom
+
+        # Calculate target dependent loss
+        second_term = 2 * beta * (1 + v)
+        second_term += (2 * alpha - 1) * v * torch.pow((targets - mu), 2)
+        L_SOS = coeff * second_term
+
+        # Calculate regularizer
+        L_REG = torch.pow((targets - mu), 2) * (2 * alpha + v)
+
+        loss_val = L_SOS + L_REG
+
+        return loss_val
+
+    def forward(self, evidential_output, y_true, *, mask=None, reduce_mean=False) -> torch.Tensor:
+        gamma, v, alpha, beta = torch.unbind(evidential_output, dim=1)
+        loss = self.evidential_loss(
+            mu=gamma,
+            v=v,
+            alpha=alpha,
+            beta=beta,
+            targets=y_true.squeeze(dim=1),
+        )
+
+        if mask is not None:
+            loss = loss * mask
+
+        if reduce_mean:
+            return torch.mean(loss)
+        
+        return loss
+        
+    @staticmethod
+    def mode(evidential_output):
+        gamma, v, alpha, beta = torch.unbind(evidential_output, dim=1)
+        return gamma
+    
+    @staticmethod
+    def aleatoric_var(evidential_output):
+        gamma, v, alpha, beta = torch.unbind(evidential_output, dim=1)
+        return beta / (alpha - 1)
+    
+    @staticmethod
+    def epistemic_var(evidential_output):
+        gamma, v, alpha, beta = torch.unbind(evidential_output, dim=1)
+        return beta / (v * (alpha - 1))
