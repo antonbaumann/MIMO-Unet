@@ -7,7 +7,6 @@ import scipy.stats
 import numpy as np
 import pandas as pd
 from pathlib import Path
-import os
 import multiprocessing as mp
 
 from models.evidential_unet import EvidentialUnetModel
@@ -178,7 +177,7 @@ def main(
     
     print(f"Creating data for calibration plot...")
     processes = min(mp.cpu_count(), processes) 
-    df_calibration = create_calibration_plot(df, scipy.stats.norm, processes=processes, num_samples=int(len(df) * 0.5))
+    df_calibration = create_calibration_plot(df, scipy.stats.norm, processes=processes, num_samples=int(len(df) * 0.1))
     df_calibration.to_csv(result_dir / f"calibration.csv", index=False)
 
     print(f"Finished processing dataset!")

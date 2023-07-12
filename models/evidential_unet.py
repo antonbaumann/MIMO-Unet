@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from typing import Literal, Dict, Tuple, Any
+from typing import Literal, Dict, Any
 
 import pytorch_lightning as pl
 import torch
@@ -8,7 +8,6 @@ from losses import EvidentialLoss
 from metrics import compute_regression_metrics
 from utils import count_trainable_parameters
 from .mimo_components.model import MimoUNet
-from .mimo_components.loss_buffer import LossBuffer
 
 
 class EvidentialUnetModel(pl.LightningModule):
