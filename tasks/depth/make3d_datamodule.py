@@ -39,7 +39,7 @@ class Make3dDepthDataModule(pl.LightningDataModule):
         )
 
         self.data_valid = Make3dDepthDataset(
-            dataset_path=os.path.join(self.dataset_dir, 'test'),
+            dataset_path=os.path.join(self.dataset_dir, 'train'),
             normalize=self.normalize,
             shuffle_on_load=True,
         )
