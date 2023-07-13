@@ -200,4 +200,6 @@ class EvidentialUnetModel(pl.LightningModule):
 
         parser.add_argument("--learning_rate", type=float, default=1e-3)
         parser.add_argument("--weight_decay", type=float, default=0.0)
+        parser.add_argument("--scheduler_step_size", type=int, default=20)
+        parser.add_argument("--scheduler_gamma", type=float, default=0.5)
         return parent_parser
