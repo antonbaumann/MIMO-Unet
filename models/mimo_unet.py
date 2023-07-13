@@ -31,6 +31,8 @@ class MimoUnetModel(pl.LightningModule):
             loss_buffer_temperature: float,
             input_repetition_probability: float = 0.0,
             batch_repetitions: int = 1,
+            scheduler_step_size: int = 20,
+            scheduler_gamma: float = 0.5,
         ):
         super().__init__()
 
@@ -50,10 +52,12 @@ class MimoUnetModel(pl.LightningModule):
         self.weight_decay = weight_decay
         self.learning_rate = learning_rate
         self.seed = seed
-        self.input_repetition_probability = input_repetition_probability
-        self.batch_repetitions = batch_repetitions
         self.loss_buffer_size = loss_buffer_size
         self.loss_buffer_temperature = loss_buffer_temperature
+        self.input_repetition_probability = input_repetition_probability
+        self.batch_repetitions = batch_repetitions
+        self.scheduler_step_size = scheduler_step_size
+        self.scheduler_gamma = scheduler_gamma
 
         self.model = MimoUNet( 
             in_channels=self.in_channels,
@@ -128,23 +132,23 @@ class MimoUnetModel(pl.LightningModule):
         }
     
     def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> Dict[str, torch.Tensor]:
-        x, y = batch["image"], batch["label"]
+        image, label = batch["image"], batch["label"]
         mask = batch["mask"] if "mask" in batch else None
 
-        x = self._repeat_subnetworks(x)
-        y = self._repeat_subnetworks(y)
+        image = self._repeat_subnetworks(image)
+        label = self._repeat_subnetworks(label)
         mask_transformed = self._repeat_subnetworks(mask) if mask is not None else None
 
-        p1, p2 = self(x)
+        p1, p2 = self(image)
 
         # [S, ]
-        val_loss = self.loss_fn.forward(p1, p2, y, mask=mask_transformed, reduce_mean=False).mean(dim=(0, 2, 3, 4))
+        val_loss = self.loss_fn.forward(p1, p2, label, mask=mask_transformed, reduce_mean=False).mean(dim=(0, 2, 3, 4))
 
         # [B, S, 1, H, W]
         y_pred = self.loss_fn.mode(p1, p2)
         aleatoric_std = self.loss_fn.std(p1, p2).mean(dim=1)
         y_pred_mean = y_pred.mean(dim=1, keepdim=True)
-        y_mean = y.mean(dim=1)
+        y_mean = label.mean(dim=1)
 
         epistemic_std = self._compute_epistemic_std(y_pred)
         combined_std = (aleatoric_std ** 2 + epistemic_std ** 2) ** 0.5
@@ -168,8 +172,17 @@ class MimoUnetModel(pl.LightningModule):
         }
 
     def configure_optimizers(self) -> Dict[str, Any]:
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5, verbose=True)
+        optimizer = torch.optim.Adam(
+            self.parameters(), 
+            lr=self.learning_rate, 
+            weight_decay=self.weight_decay,
+        )
+        scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer, 
+            step_size=self.scheduler_step_size,
+            gamma=self.scheduler_gamma, 
+            verbose=True,
+        )
         return dict(
             optimizer=optimizer,
             lr_scheduler=scheduler,
@@ -197,7 +210,7 @@ class MimoUnetModel(pl.LightningModule):
         return variance ** 0.5
 
     def _apply_input_transform(
-            self, 
+            self,
             image: torch.Tensor,
             label: torch.Tensor,
             mask: torch.Tensor = None,
@@ -273,20 +286,22 @@ class MimoUnetModel(pl.LightningModule):
         ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Calculate the (weighted) training loss.
+        
         Args:
-            p1: [B, S, C, H, W]
-            p2: [B, S, C, H, W]
-            y_true: [B, S, C, H, W]
+            p1, p2, y_true: Input tensors of shape [B, S, C, H, W]
+            mask: Optional mask tensor
+        
         Returns:
-            loss, loss_weighted, weights: [S, ], [S, ], [S, ]
+            loss, loss_weighted, weights: Output tensors of shape [S, ]
         """
 
         forward = self.loss_fn.forward(p1, p2, y_true, reduce_mean=False, mask=mask)
         loss = forward.mean(dim=(0, 2, 3, 4))
         weights = self.loss_buffer.get_weights().to(loss.device)
-        loss_weighted = loss * weights
+
         self.loss_buffer.add(loss.detach())
-        return loss, loss_weighted, weights
+
+        return loss, loss * weights, weights
     
     def _log_train_loss_and_weights(self, loss: torch.Tensor, weights: torch.Tensor) -> None:
         self.log("train_loss", loss.mean(), batch_size=self.trainer.datamodule.batch_size)
@@ -351,4 +366,6 @@ class MimoUnetModel(pl.LightningModule):
         parser.add_argument("--weight_decay", type=float, default=0.0)
         parser.add_argument("--loss_buffer_size", type=int, default=10)
         parser.add_argument("--loss_buffer_temperature", type=float, default=1.0)
+        parser.add_argument("--scheduler_step_size", type=int, default=20)
+        parser.add_argument("--scheduler_gamma", type=float, default=0.5)
         return parent_parser

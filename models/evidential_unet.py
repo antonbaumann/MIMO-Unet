@@ -24,6 +24,8 @@ class EvidentialUnetModel(pl.LightningModule):
             weight_decay: float,
             learning_rate: float,
             seed: int,
+            scheduler_step_size: int = 20,
+            scheduler_gamma: float = 0.5,
         ):
         super().__init__()
 
@@ -42,6 +44,8 @@ class EvidentialUnetModel(pl.LightningModule):
         self.weight_decay = weight_decay
         self.learning_rate = learning_rate
         self.seed = seed
+        self.scheduler_step_size = scheduler_step_size
+        self.scheduler_gamma = scheduler_gamma
 
         self.model = MimoUNet( 
             in_channels=self.in_channels,
@@ -139,7 +143,12 @@ class EvidentialUnetModel(pl.LightningModule):
 
     def configure_optimizers(self) -> Dict[str, Any]:
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5, verbose=True)
+        scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer, 
+            step_size=self.scheduler_step_size, 
+            gamma=self.scheduler_gamma,
+            verbose=True,
+        )
         return dict(
             optimizer=optimizer,
             lr_scheduler=scheduler,
