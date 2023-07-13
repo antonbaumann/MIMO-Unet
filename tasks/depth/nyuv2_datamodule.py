@@ -1,6 +1,5 @@
 from typing import Optional
-from argparse import ArgumentParser
-from dataclasses import dataclass
+from argparse import ArgumentParser, Namespace
 import pytorch_lightning as pl
 import torch
 import os
@@ -81,13 +80,13 @@ class NYUv2DepthDataModule(pl.LightningDataModule):
         )
     
     @classmethod
-    def from_params(cls, params: dataclass) -> "NYUv2DepthDataModule":
+    def from_args(cls, args: Namespace) -> "NYUv2DepthDataModule":
         return cls(
-            dataset_dir=params.dataset_dir,
-            batch_size=params.batch_size,
-            num_workers=params.num_workers,
-            pin_memory=params.pin_memory,
-            train_dataset_fraction=params.train_dataset_fraction,
+            dataset_dir=args.dataset_dir,
+            batch_size=args.batch_size,
+            num_workers=args.num_workers,
+            pin_memory=args.pin_memory,
+            train_dataset_fraction=args.train_dataset_fraction,
         )
 
     @staticmethod

@@ -21,6 +21,11 @@ class UncertaintyLoss(torch.nn.Module, ABC):
     def calculate_dist_param(self, std: torch.Tensor, *, log: bool = False) -> torch.Tensor:
         pass
 
+    @property
+    @abstractmethod
+    def num_distribution_params(self) -> int:
+        pass
+
     @classmethod
     def from_name(cls, name: str) -> "UncertaintyLoss":
         if name == "gaussian_nll":
@@ -32,6 +37,8 @@ class UncertaintyLoss(torch.nn.Module, ABC):
 
 
 class GaussianNLL(UncertaintyLoss):
+    num_distribution_params = 2
+
     def __init__(self, eps_min: float = 1e-5, eps_max: float = 1e3):
         super().__init__()
         self.eps_min = eps_min
@@ -115,6 +122,8 @@ class GaussianNLL(UncertaintyLoss):
 
 
 class LaplaceNLL(UncertaintyLoss):
+    num_distribution_params = 2
+
     def __init__(self, eps_min: float = 1e-5, eps_max: float = 1e3):
         super().__init__()
         self.eps_min = eps_min
@@ -184,6 +193,8 @@ class LaplaceNLL(UncertaintyLoss):
 
 
 class EvidentialLoss(torch.nn.Module):
+    num_distribution_params = 4
+    
     def __init__(self, coeff: float) -> None:
         super().__init__()
         self.coeff = coeff

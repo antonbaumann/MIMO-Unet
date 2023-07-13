@@ -41,7 +41,7 @@ def main(args: Namespace):
 
     model = MimoUnetModel(
         in_channels=len(dm.model_inputs),
-        out_channels=len(dm.model_targets) * 2,
+        out_channels=len(dm.model_targets) * args.num_loss_function_params,
         num_subnetworks=args.num_subnetworks,
         filter_base_count=args.filter_base_count,
         center_dropout_rate=args.center_dropout_rate,
@@ -103,6 +103,12 @@ if __name__ == "__main__":
         type=str,
         default="MIMO Sen12TP",
         help="Specify the name of the wandb project.",
+    )
+    parser.add_argument(
+        "--num_loss_function_params",
+        type=int,
+        default=2,
+        help="Specify the number of parameters of the loss function.",
     )
     parser = add_datamodule_args(parser)
     parser = MimoUnetModel.add_model_specific_args(parser)
