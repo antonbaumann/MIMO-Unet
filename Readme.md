@@ -1,8 +1,11 @@
 # Probabilistic MIMO U-Net
 
 ## Installation
-```python
+```bash
 pip install -r requirements.txt
+git clone https://github.com/oceanites/sen12tp GOAL_PATH
+export PYTHONPATH=$PYTHONPATH:GOAL_PATH
+```
 ```
 
 ## Training
