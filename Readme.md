@@ -6,7 +6,6 @@ pip install -r requirements.txt
 git clone https://github.com/oceanites/sen12tp GOAL_PATH
 export PYTHONPATH=$PYTHONPATH:GOAL_PATH
 ```
-```
 
 ## Training
 The training scripts are located in the `scripts/train/` folder. The following scripts are available:
