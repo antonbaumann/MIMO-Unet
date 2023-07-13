@@ -36,9 +36,9 @@ def default_callbacks(validation: bool = True) -> List[pl.Callback]:
 
 
 def main(args: Namespace):
-    pl.seed_everything(params.seed)
+    pl.seed_everything(args.seed)
 
-    dm = NYUv2DepthDataModule.from_args(params)
+    dm = NYUv2DepthDataModule.from_args(args)
 
     model = MimoUnetModel(
         in_channels=3,

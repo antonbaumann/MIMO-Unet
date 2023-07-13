@@ -28,7 +28,7 @@ class OutputMonitor(pl.Callback):
         img_data: Tensor with the shape batch x vegetation_indices x M x N
         log_name: name of logged image, must contain a formatting placeholder `{veg_index}`
         """
-        veg_indices = pl_module.datamodule.model_targets
+        veg_indices = pl_module.trainer.datamodule.model_targets
         assert len(veg_indices) == img_data.shape[1], f"Mismatch of veg index count and array shape: {len(veg_indices)} != {img_data.shape[1]}"
 
         for idx, veg_index in enumerate(veg_indices):
