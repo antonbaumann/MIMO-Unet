@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 import torch
 import torchvision
 import pytorch_lightning as pl
@@ -28,8 +28,7 @@ class OutputMonitor(pl.Callback):
         img_data: Tensor with the shape batch x vegetation_indices x M x N
         log_name: name of logged image, must contain a formatting placeholder `{veg_index}`
         """
-        veg_indices = getattr(pl_module, "target", ["NDVI"])
-        veg_indices = [v.lower() for v in veg_indices]
+        veg_indices = pl_module.train_dataset.model_targets
         assert len(veg_indices) == img_data.shape[1], f"Mismatch of veg index count and array shape: {len(veg_indices)} != {img_data.shape[1]}"
 
         for idx, veg_index in enumerate(veg_indices):
