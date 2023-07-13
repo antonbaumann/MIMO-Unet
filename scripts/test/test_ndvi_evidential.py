@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from typing import List, Tuple
+from typing import List
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
