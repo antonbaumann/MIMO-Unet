@@ -169,7 +169,7 @@ class MimoUnetModel(pl.LightningModule):
         self._log_uncertainties(aleatoric_std, epistemic_std)
 
         print(y_mean.shape)
-        print(y_pred_mean.shape)
+        print(y_pred_mean.squeeze(dim=1).shape)
         print(aleatoric_std.shape)
         print(epistemic_std.shape)
        
