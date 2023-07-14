@@ -176,10 +176,10 @@ class MimoUnetModel(pl.LightningModule):
         return {
             "loss": val_loss.mean(),
             "label": y_mean,
-            "preds": y_pred_mean.squeeze(dim=1), 
+            "preds": y_pred_mean, 
             "aleatoric_std_map": aleatoric_std, 
             "epistemic_std_map": epistemic_std,
-            "err_map": y_pred_mean.squeeze(dim=1) - y_mean,
+            "err_map": y_pred_mean - y_mean,
             "mask": mask,
         }
 
