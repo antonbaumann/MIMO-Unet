@@ -167,6 +167,11 @@ class MimoUnetModel(pl.LightningModule):
         self._log_val_loss(val_loss, val_loss_combined)
         self._log_metrics(y_pred=y_pred_mean, y_true=y_mean, stage="val")
         self._log_uncertainties(aleatoric_std, epistemic_std)
+
+        print(y_mean.shape)
+        print(y_pred_mean.shape)
+        print(aleatoric_std.shape)
+        print(epistemic_std.shape)
        
         return {
             "loss": val_loss.mean(),
