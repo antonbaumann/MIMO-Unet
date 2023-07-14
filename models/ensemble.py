@@ -2,28 +2,8 @@ import torch
 import pytorch_lightning as pl
 from typing import List
 from models.mimo_unet import MimoUnetModel
+from .utils import repeat_subnetworks, compute_uncertainties
 
-def repeat_subnetworks(x, num_subnetworks):
-    return x.unsqueeze(1).repeat(1, num_subnetworks, 1, 1, 1)
-
-def compute_uncertainties(criterion, y_preds, log_params):
-    """
-    Args:
-        y_preds: [B, S, C, H, W]
-    """
-    _, S, _, _, _ = y_preds.shape
-    
-    mean = criterion.mode(y_preds, log_params).mean(dim=1)
-    stds = criterion.std(y_preds, log_params)
-    aleatoric_variance = torch.square(stds).mean(dim=1)
-    
-    if S > 1:
-        y_preds_mean = y_preds.mean(dim=1, keepdims=True)
-        epistemic_variance = torch.square(y_preds - y_preds_mean).sum(dim=1) / (S - 1)
-    else:
-        epistemic_variance = torch.zeros_like(aleatoric_variance)
-        
-    return mean, aleatoric_variance, epistemic_variance
 
 class EnsembleModule(pl.LightningModule):
     def __init__(

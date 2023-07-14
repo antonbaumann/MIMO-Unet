@@ -9,6 +9,7 @@ from metrics import compute_regression_metrics
 from utils import count_trainable_parameters
 from .mimo_components.model import MimoUNet
 from .mimo_components.loss_buffer import LossBuffer
+from .utils import repeat_subnetworks, apply_input_transform, compute_uncertainties
 
 
 class MimoUnetModel(pl.LightningModule):
@@ -111,7 +112,14 @@ class MimoUnetModel(pl.LightningModule):
         image, label = batch["image"], batch["label"]
         mask = batch["mask"] if "mask" in batch else None
         
-        image_transformed, label_transformed, mask_transformed = self._apply_input_transform(image, label, mask)
+        image_transformed, label_transformed, mask_transformed = apply_input_transform(
+            image, 
+            label, 
+            mask,
+            num_subnetworks=self.num_subnetworks,
+            input_repetition_probability=self.input_repetition_probability,
+            batch_repetitions=self.batch_repetitions,
+        )
 
         p1, p2 = self(image_transformed)
         y_pred = self.loss_fn.mode(p1, p2)
@@ -135,30 +143,29 @@ class MimoUnetModel(pl.LightningModule):
         image, label = batch["image"], batch["label"]
         mask = batch["mask"] if "mask" in batch else None
 
-        image = self._repeat_subnetworks(image)
-        label = self._repeat_subnetworks(label)
-        mask_transformed = self._repeat_subnetworks(mask) if mask is not None else None
+        image = repeat_subnetworks(image, num_subnetworks=self.num_subnetworks)
+        label = repeat_subnetworks(label, num_subnetworks=self.num_subnetworks)
+        mask_transformed = repeat_subnetworks(mask, num_subnetworks=self.num_subnetworks) if mask is not None else None
 
         p1, p2 = self(image)
 
         # [S, ]
         val_loss = self.loss_fn.forward(p1, p2, label, mask=mask_transformed, reduce_mean=False).mean(dim=(0, 2, 3, 4))
 
-        # [B, S, 1, H, W]
-        y_pred = self.loss_fn.mode(p1, p2)
-        aleatoric_std = self.loss_fn.std(p1, p2).mean(dim=1)
-        y_pred_mean = y_pred.mean(dim=1, keepdim=True)
+        # [B, S, H, W]
+        y_pred_mean, aleatoric_var, epistemic_var = compute_uncertainties(self.loss_fn, p1, p2)
         y_mean = label.mean(dim=1)
 
-        epistemic_std = self._compute_epistemic_std(y_pred)
-        combined_std = (aleatoric_std ** 2 + epistemic_std ** 2) ** 0.5
-        combined_log_scale = self.loss_fn.calculate_dist_param(std=combined_std, log=True)
+        combined_var = aleatoric_var + epistemic_var
+        combined_std = torch.sqrt(combined_var)
+        aleatoric_std = torch.sqrt(aleatoric_var)
+        epistemic_std = torch.sqrt(epistemic_var)
 
+        combined_log_scale = self.loss_fn.calculate_dist_param(std=combined_std, log=True)
         val_loss_combined = self.loss_fn.forward(p1.mean(dim=1), combined_log_scale, y_mean, mask=mask, reduce_mean=True)
 
         self._log_val_loss(val_loss, val_loss_combined)
         self._log_metrics(y_pred=y_pred_mean, y_true=y_mean, stage="val")
-
         self._log_uncertainties(aleatoric_std, epistemic_std)
        
         return {
@@ -208,74 +215,6 @@ class MimoUnetModel(pl.LightningModule):
         normalizing_const = 1 / (S - 1)
         variance = torch.sum((y_hat - y_hat_mean) ** 2, dim=1) * normalizing_const
         return variance ** 0.5
-
-    def _apply_input_transform(
-            self,
-            image: torch.Tensor,
-            label: torch.Tensor,
-            mask: torch.Tensor = None,
-        ):
-        """
-        Apply input transformations to the input data.
-        - batch repetition
-        - input repetition
-
-        Args:
-            image: [B, C_image, H, W]
-            label: [B, C_label, H, W]
-        Returns:
-            [B, S, C_image, H, W], [B, S, C_label, H, W]
-        """
-        B, _, _, _ = image.shape
-
-        main_shuffle = torch.randperm(B, device=image.device).repeat(self.batch_repetitions)
-        to_shuffle = int(main_shuffle.shape[0] * (1. - self.input_repetition_probability))
-
-        shuffle_indices = [
-            torch.cat(
-                (main_shuffle[:to_shuffle][torch.randperm(to_shuffle)], main_shuffle[to_shuffle:]), 
-                dim=0,
-            ) for _ in range(self.num_subnetworks)
-        ]
-
-        image_transformed = torch.stack(
-            [torch.index_select(image, 0, indices) for indices in shuffle_indices], 
-            dim=1,
-        )
-        label_transformed = torch.stack(
-            [torch.index_select(label, 0, indices) for indices in shuffle_indices],
-            dim=1,
-        )
-        mask_transformed = torch.stack(
-            [torch.index_select(mask, 0, indices) for indices in shuffle_indices],
-            dim=1,
-        ) if mask is not None else None
-        return image_transformed, label_transformed, mask_transformed
-
-    def _repeat_subnetworks(self, x: torch.Tensor):
-        """
-        Repeat the input tensor along the subnetwork dimension.
-
-        Args:
-            x: [B, C, H, W]
-        Returns:
-            x: [B, S, C, H, W]
-        """
-        x = x[:, None, :, :, :]
-        return x.repeat(1, self.num_subnetworks, 1, 1, 1)
-
-    def _flatten_subnetwork_dimension(self, x: torch.Tensor):
-        """
-        Collapse the subnetwork dimension into the batch dimension.
-
-        Args:
-            x: [B // S, S, C, H, W]
-        Returns:
-            x: [B, C, H, W]
-        """
-        B_, S, C, H, W = x.shape
-        # [B // S, S, C, H, W] -> [B, C, H, W]
-        return x.view(B_ * S, C, H, W)
 
     def _calculate_train_loss(
             self, 
