@@ -9,7 +9,7 @@ from metrics import compute_regression_metrics
 from utils import count_trainable_parameters
 from .mimo_components.model import MimoUNet
 from .mimo_components.loss_buffer import LossBuffer
-from .utils import repeat_subnetworks, apply_input_transform, compute_uncertainties
+from .utils import repeat_subnetworks, apply_input_transform, flatten_subnetwork_dimension, compute_uncertainties
 
 
 class MimoUnetModel(pl.LightningModule):
@@ -132,11 +132,11 @@ class MimoUnetModel(pl.LightningModule):
 
         return {
             "loss": loss_weighted.mean(),
-            "label": self._flatten_subnetwork_dimension(label_transformed),
-            "preds": self._flatten_subnetwork_dimension(y_pred),
-            "aleatoric_std_map": self._flatten_subnetwork_dimension(aleatoric_std), 
-            "err_map": self._flatten_subnetwork_dimension(y_pred - label_transformed),
-            "mask": self._flatten_subnetwork_dimension(mask_transformed) if mask_transformed is not None else None,
+            "label": flatten_subnetwork_dimension(label_transformed),
+            "preds": flatten_subnetwork_dimension(y_pred),
+            "aleatoric_std_map": flatten_subnetwork_dimension(aleatoric_std), 
+            "err_map": flatten_subnetwork_dimension(y_pred - label_transformed),
+            "mask": flatten_subnetwork_dimension(mask_transformed) if mask_transformed is not None else None,
         }
     
     def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> Dict[str, torch.Tensor]:
