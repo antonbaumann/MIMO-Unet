@@ -8,7 +8,7 @@ torchvision
 torchmetrics==0.11.1
 h5py
 scipy
-cv2
+opencv-python
 imageio
 tqdm
 wandb
