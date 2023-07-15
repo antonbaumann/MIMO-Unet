@@ -9,9 +9,11 @@ import pandas as pd
 from pathlib import Path
 import multiprocessing as mp
 
-from models.evidential_unet import EvidentialUnetModel
 from sen12tp.dataset import SEN12TP, Patchsize
 import sen12tp.utils
+
+from mimo.models.evidential_unet import EvidentialUnetModel
+
 
 def make_predictions(model, dataset, device: str, batch_size: int = 5, num_workers=30):
     inputs = []

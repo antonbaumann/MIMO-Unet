@@ -7,10 +7,10 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
-from utils import dir_path
-from models.evidential_unet import EvidentialUnetModel
-from tasks.depth.nyuv2_datamodule import NYUv2DepthDataModule
-from tasks.depth.callbacks import OutputMonitor, WandbMetricsDefiner
+from mimo.utils import dir_path
+from mimo.models.evidential_unet import EvidentialUnetModel
+from mimo.tasks.depth.nyuv2_datamodule import NYUv2DepthDataModule
+from mimo.tasks.depth.callbacks import OutputMonitor, WandbMetricsDefiner
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

@@ -5,7 +5,7 @@ from sen12tp.datamodule import SEN12TPDataModule
 from sen12tp.dataset import Patchsize
 import sen12tp.utils
 
-from utils import dir_path
+from mimo.utils import dir_path
 
 
 logger = logging.getLogger(__name__)

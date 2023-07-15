@@ -4,8 +4,8 @@ import pytorch_lightning as pl
 import torch
 import os
 
-from utils import dir_path
-from datasets.muad import MUADDepthDataset
+from mimo.utils import dir_path
+from mimo.datasets.muad import MUADDepthDataset
 
 class MUADDepthDatamodule(pl.LightningDataModule):
     def __init__(

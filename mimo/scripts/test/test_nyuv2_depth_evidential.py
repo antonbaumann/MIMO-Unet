@@ -10,8 +10,8 @@ from pathlib import Path
 import os
 import multiprocessing as mp
 
-from models.evidential_unet import EvidentialUnetModel
-from datasets.nyuv2 import NYUv2DepthDataset
+from mimo.models.evidential_unet import EvidentialUnetModel
+from mimo.datasets.nyuv2 import NYUv2DepthDataset
 
 def fgsm_attack(image, epsilon, data_grad):
     # Collect the element-wise sign of the data gradient

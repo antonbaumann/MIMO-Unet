@@ -1,7 +1,8 @@
 import torch
 import pytorch_lightning as pl
 from typing import List
-from models.mimo_unet import MimoUnetModel
+
+from mimo.models.mimo_unet import MimoUnetModel
 from .utils import repeat_subnetworks, compute_uncertainties
 
 

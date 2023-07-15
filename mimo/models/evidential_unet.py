@@ -4,9 +4,9 @@ from typing import Literal, Dict, Any
 import pytorch_lightning as pl
 import torch
 
-from losses import EvidentialLoss
-from metrics import compute_regression_metrics
-from utils import count_trainable_parameters
+from mimo.losses import EvidentialLoss
+from mimo.metrics import compute_regression_metrics
+from mimo.utils import count_trainable_parameters
 from .mimo_components.model import MimoUNet
 
 

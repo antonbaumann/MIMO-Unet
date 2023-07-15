@@ -3,9 +3,9 @@ import torch
 import torchvision
 import pytorch_lightning as pl
 import wandb
-
-from visualization import colorize
 import numpy as np
+
+from mimo.visualization import colorize
 
 
 class OutputMonitor(pl.Callback):

@@ -4,8 +4,8 @@ import pytorch_lightning as pl
 import torch
 import os
 
-from utils import dir_path
-from datasets.nyuv2 import NYUv2DepthDataset
+from mimo.utils import dir_path
+from mimo.datasets.nyuv2 import NYUv2DepthDataset
 
 
 class NYUv2DepthDataModule(pl.LightningDataModule):

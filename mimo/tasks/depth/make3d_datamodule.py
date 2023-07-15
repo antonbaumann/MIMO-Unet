@@ -5,8 +5,8 @@ import pytorch_lightning as pl
 import torch
 import os
 
-from utils import dir_path
-from datasets.make3d import Make3dDepthDataset
+from mimo.utils import dir_path
+from mimo.datasets.make3d import Make3dDepthDataset
 
 
 class Make3dDepthDataModule(pl.LightningDataModule):

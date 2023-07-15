@@ -4,9 +4,9 @@ from typing import Literal, Dict, Tuple, Any
 import pytorch_lightning as pl
 import torch
 
-from losses import UncertaintyLoss
-from metrics import compute_regression_metrics
-from utils import count_trainable_parameters
+from mimo.losses import UncertaintyLoss
+from mimo.metrics import compute_regression_metrics
+from mimo.utils import count_trainable_parameters
 from .mimo_components.model import MimoUNet
 from .mimo_components.loss_buffer import LossBuffer
 from .utils import repeat_subnetworks, apply_input_transform, flatten_subnetwork_dimension, compute_uncertainties

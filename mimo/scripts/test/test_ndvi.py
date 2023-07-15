@@ -9,9 +9,10 @@ import pandas as pd
 from pathlib import Path
 import multiprocessing as mp
 
-from models.ensemble import EnsembleModule
 from sen12tp.dataset import SEN12TP, Patchsize
 import sen12tp.utils
+
+from mimo.models.ensemble import EnsembleModule
 
 def fgsm_attack(image, epsilon, data_grad):
     # Collect the element-wise sign of the data gradient

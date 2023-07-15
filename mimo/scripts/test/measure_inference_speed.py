@@ -1,7 +1,9 @@
 from argparse import ArgumentParser
-from models.ensemble import EnsembleModule
 import torch
 import numpy as np
+
+from mimo.models.ensemble import EnsembleModule
+
 
 def main(
     model_checkpoint_paths: str,
