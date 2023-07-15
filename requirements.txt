@@ -1,6 +1,6 @@
 numpy
 pandas
-pyplot
+matplotlib
 seaborn
 pytorch-lightning==1.9.3
 torch==1.12.0
