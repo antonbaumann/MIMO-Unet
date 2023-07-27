@@ -3,9 +3,11 @@ from argparse import Namespace, ArgumentParser
 from datetime import datetime
 import logging
 
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
-from pytorch_lightning.loggers import WandbLogger
+import torch
+
+import lightning.pytorch as pl
+from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.loggers.wandb import WandbLogger
 
 from mimo.utils import dir_path
 from mimo.models.mimo_unet import MimoUnetModel
@@ -60,6 +62,8 @@ def main(args: Namespace):
         seed=args.seed,
     )
 
+    model.compile()
+
     wandb_logger = WandbLogger(project=args.project, log_model=True, save_dir=args.checkpoint_path)
     wandb_logger.experiment.config.update(vars(args))
 
@@ -67,7 +71,7 @@ def main(args: Namespace):
         callbacks=default_callbacks(), 
         accelerator='gpu', 
         devices=1,
-        precision=16,
+        precision="16-mixed",
         max_epochs=100,
         default_root_dir=args.checkpoint_path,
         log_every_n_steps=200,

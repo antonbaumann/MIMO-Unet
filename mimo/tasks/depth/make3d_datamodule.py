@@ -1,7 +1,7 @@
 from typing import Optional
 from argparse import ArgumentParser
 from dataclasses import dataclass
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch
 import os
 

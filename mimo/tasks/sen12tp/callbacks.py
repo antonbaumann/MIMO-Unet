@@ -1,7 +1,7 @@
 from typing import Optional, List
 import torch
 import torchvision
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import wandb
 import numpy as np
 
@@ -107,7 +107,7 @@ class OutputMonitor(pl.Callback):
             )
 
     def on_validation_batch_end(
-        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0
     ):
         if batch_idx % trainer.log_every_n_steps == 0:
             kwargs = {

@@ -1,5 +1,5 @@
 import torch
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 from typing import List
 
 from mimo.models.mimo_unet import MimoUnetModel

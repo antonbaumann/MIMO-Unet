@@ -1,6 +1,6 @@
 from typing import Optional, Tuple
 from argparse import Namespace, ArgumentParser
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch
 import os
 

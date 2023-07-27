@@ -1,7 +1,7 @@
 from argparse import ArgumentParser, Namespace
 import logging
 
-from sen12tp.datamodule import SEN12TPDataModule
+from sen12tp.datamodule import SEN12TPDataModuleV2
 from sen12tp.dataset import Patchsize
 import sen12tp.utils
 
@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def get_datamodule(args: Namespace) -> SEN12TPDataModule:
-    dm = SEN12TPDataModule(
+def get_datamodule(args: Namespace) -> SEN12TPDataModuleV2:
+    dm = SEN12TPDataModuleV2(
         dataset_dir=args.dataset_dir,
         batch_size=args.batch_size,
         patch_size=Patchsize(
@@ -29,7 +29,7 @@ def get_datamodule(args: Namespace) -> SEN12TPDataModule:
         shuffle_train=True,
         drop_last_train=True,
     )
-    dm.setup()
+    dm.setup(stage="fit")
     dm.sen12tp_train.end_index = int(args.training_set_percentage * dm.sen12tp_train.end_index)
 
     return dm

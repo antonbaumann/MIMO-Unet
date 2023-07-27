@@ -1,6 +1,6 @@
 from typing import Optional
 from argparse import ArgumentParser, Namespace
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch
 import os
 

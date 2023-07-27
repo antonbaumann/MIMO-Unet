@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from typing import Literal, Dict, Any
 
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch
 
 from mimo.losses import EvidentialLoss
@@ -66,6 +66,10 @@ class EvidentialUnetModel(pl.LightningModule):
             "loss": 'evidential',
             "trainable_params": count_trainable_parameters(self.model),
         })
+
+    def compile(self):
+        """Compile the model."""
+        self.model = torch.compile(self.model)
 
     def forward(self, x: torch.Tensor):
         """

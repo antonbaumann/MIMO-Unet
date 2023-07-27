@@ -2,10 +2,10 @@ numpy
 pandas
 matplotlib
 seaborn
-pytorch-lightning==1.9.3
-torch==1.12.0
+lightning
+torch
 torchvision
-torchmetrics==0.11.1
+torchmetrics
 h5py
 scipy
 opencv-python
