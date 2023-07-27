@@ -1,0 +1,14 @@
+numpy
+pandas
+matplotlib
+seaborn
+lightning
+torch
+torchvision
+torchmetrics
+h5py
+scipy
+opencv-python
+imageio
+tqdm
+wandb
