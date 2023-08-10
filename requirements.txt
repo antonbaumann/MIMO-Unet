@@ -3,7 +3,7 @@ matplotlib==3.7.2
 seaborn==0.12.2
 lightning==2.0.6
 torch==2.*
-torchvision==0.16.*
+torchvision
 torchmetrics==1.0.1
 h5py==3.9.0
 scipy==1.11.1
