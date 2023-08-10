@@ -5,7 +5,7 @@
 ## Installation
 ```bash
 pip install -r requirements.txt
-git clone -b feature/lightningv2-compat https://github.com/antonbaumann/sen12tp.git GOAL_PATH
+git clone https://github.com/oceanites/sen12tp.git GOAL_PATH
 export PYTHONPATH=$PYTHONPATH:GOAL_PATH
 ```
 
