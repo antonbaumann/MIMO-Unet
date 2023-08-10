@@ -1,5 +1,7 @@
 # Probabilistic MIMO U-Net
 
+![MIMO U-Net](MIMO_Unet_Highlevel_colors.jpg "MIMO U-Net")
+
 ## Installation
 ```bash
 pip install -r requirements.txt
