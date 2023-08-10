@@ -1,3 +1,7 @@
+<a target="_blank" href="https://colab.research.google.com/github/antonbaumann/MIMO-Unet/blob/main/MIMO_U_Net_NYUv2_depth.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
+
 # Probabilistic MIMO U-Net
 
 ![MIMO U-Net](MIMO_Unet_Highlevel_colors.jpg "MIMO U-Net")
