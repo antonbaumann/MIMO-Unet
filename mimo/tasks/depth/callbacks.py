@@ -39,10 +39,10 @@ class OutputMonitor(pl.Callback):
         index_grid = torchvision.utils.make_grid(index_data)
         img_color = colorize(index_grid, vmin=vmin, vmax=vmax, cmap=cmap)
 
-        if isinstance(logger, pl.loggers.wandb.WandbLogger):
+        if isinstance(logger, pl.loggers.WandbLogger):
             images = wandb.Image(img_color)
             wandb.log({log_name: images}, step=global_step)
-        if isinstance(logger, pl.loggers.tensorboard.TensorBoardLogger):
+        if isinstance(logger, pl.loggers.TensorBoardLogger):
             logger.experiment.add_image(log_name, img_color, global_step=global_step)
         else:
             warnings.warn(f"Logger {logger} not supported for logging images.")
