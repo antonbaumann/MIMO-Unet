@@ -39,12 +39,10 @@ class OutputMonitor(pl.Callback):
         index_grid = torchvision.utils.make_grid(index_data)
         img_color = colorize(index_grid, vmin=vmin, vmax=vmax, cmap=cmap)
 
-        print(type(logger))
-
-        if isinstance(logger, pl.loggers.WandbLogger):
+        if isinstance(logger, pl.loggers.wandb.WandbLogger):
             images = wandb.Image(img_color)
             wandb.log({log_name: images}, step=global_step)
-        if isinstance(logger, pl.loggers.TensorBoardLogger):
+        if isinstance(logger, pl.loggers.tensorboard.TensorBoardLogger):
             print(img_color.shape)
             logger.experiment.add_image(log_name, img_color, dataformats="HWC", global_step=global_step)
         else:
