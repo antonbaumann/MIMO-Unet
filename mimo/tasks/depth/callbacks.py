@@ -1,4 +1,5 @@
 from typing import Optional
+import warnings
 import torch
 import torchvision
 import lightning.pytorch as pl
@@ -38,8 +39,13 @@ class OutputMonitor(pl.Callback):
         index_grid = torchvision.utils.make_grid(index_data)
         img_color = colorize(index_grid, vmin=vmin, vmax=vmax, cmap=cmap)
 
-        images = wandb.Image(img_color)
-        wandb.log({log_name: images}, step=global_step)
+        if isinstance(logger, pl.loggers.wandb.WandbLogger):
+            images = wandb.Image(img_color)
+            wandb.log({log_name: images}, step=global_step)
+        if isinstance(logger, pl.loggers.tensorboard.TensorBoardLogger):
+            logger.experiment.add_image(log_name, img_color, dataformats="HWC", global_step=global_step)
+        else:
+            warnings.warn(f"Logger {logger} not supported for logging images.")
 
     def _log_image(
         self,
