@@ -39,6 +39,8 @@ class OutputMonitor(pl.Callback):
         index_grid = torchvision.utils.make_grid(index_data)
         img_color = colorize(index_grid, vmin=vmin, vmax=vmax, cmap=cmap)
 
+        print(type(logger))
+
         if isinstance(logger, pl.loggers.WandbLogger):
             images = wandb.Image(img_color)
             wandb.log({log_name: images}, step=global_step)
