@@ -43,7 +43,8 @@ class OutputMonitor(pl.Callback):
             images = wandb.Image(img_color)
             wandb.log({log_name: images}, step=global_step)
         if isinstance(logger, pl.loggers.TensorBoardLogger):
-            logger.experiment.add_image(log_name, img_color, global_step=global_step)
+            print(img_color.shape)
+            logger.experiment.add_image(log_name, img_color, dataformats="HWC", global_step=global_step)
         else:
             warnings.warn(f"Logger {logger} not supported for logging images.")
 
