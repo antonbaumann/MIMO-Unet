@@ -8,9 +8,14 @@
 
 ## Installation
 ```bash
+git clone https://github.com/antonbaumann/MIMO-Unet.git
+cd MIMO-Unet
 pip install -r requirements.txt
-git clone https://github.com/oceanites/sen12tp.git GOAL_PATH
-export PYTHONPATH=$PYTHONPATH:GOAL_PATH
+export PYTHONPATH=$PYTHONPATH:MIMO_REPOSITORY_PATH
+
+# if you want to use the SEN12TP dataset
+git clone https://github.com/oceanites/sen12tp.git
+export PYTHONPATH=$PYTHONPATH:SEN12TP_REPOSITORY_PATH
 ```
 
 ## Training
@@ -41,7 +46,7 @@ python train_ndvi.py \
   --decoder_dropout_rate 0.0 \
   --loss laplace_nll \
   --seed 1 \
-  --project "NDVI Baselines"
+  --project "MIMO NDVI Prediction"
 ```
 
 ### NYU Depth V2
@@ -65,7 +70,7 @@ python train_nyuv2_depth.py \
   --loss laplace_nll \
   --seed 1 \
   --train_dataset_fraction 1 \
-  --project "MIMO NYUv2Depth M"
+  --project "MIMO NYUv2Depth"
 ```
 
 For Monte-Carlo Dropout, set `--core_dropout_rate 0.1`, `--encoder_dropout_rate 0.1`, `--decoder_dropout_rate 0.1`.
