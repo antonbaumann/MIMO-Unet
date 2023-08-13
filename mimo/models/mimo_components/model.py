@@ -10,9 +10,24 @@ logger = logging.getLogger(__name__)
 
 
 def create_module_list(module: nn.Module, num_subnetworks: int, **kwargs):
+    """
+    Utility function to create a list of identical modules.
+    
+    Args:
+        module: The PyTorch module to be repeated.
+        num_subnetworks: Number of times the module needs to be repeated.
+        **kwargs: Arguments to be passed to the module during initialization.
+    
+    Returns:
+        A module list containing the repeated modules.
+    """
     return nn.ModuleList([module(**kwargs) for _ in range(num_subnetworks)])
 
 class MimoUNet(nn.Module):
+    """
+    Multiple Input Multiple Output (MIMO) UNet architecture.
+    Consists of an encoder, a core, and a decoder.
+    """
     def __init__(
         self,
         in_channels: int,
@@ -76,12 +91,14 @@ class MimoUNet(nn.Module):
             use_pooling_indices=use_pooling_indices,
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         """
+        Define the forward pass for MimoUNet.
+
         Args:
             x: [B, S, C_in, H, W]
         Returns:
-            logits: [B, S, C_out, H, W]
+            predictions: [B, S, C_out, H, W]
         
         - B: batch size
         - S: number of subnetworks
@@ -89,8 +106,6 @@ class MimoUNet(nn.Module):
         - C_out: number of output channels per subnetwork
         - H, W: image dimensions
         """
-
-        _, S, _, _, _ = x.shape
 
         x1s, x2s, ind2s = self.encoder(x)
         
@@ -102,6 +117,9 @@ class MimoUNet(nn.Module):
         return self.decoder(x, x1s, ind2s)
     
 class SubnetworkEncoder(nn.Module):
+    """
+    Subnetwork responsible for encoding input tensor.
+    """
     def __init__(
         self, 
         num_subnetworks: int, 
@@ -133,6 +151,13 @@ class SubnetworkEncoder(nn.Module):
         self, 
         x: torch.Tensor
     ) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
+        """
+        Define the forward pass for the encoder.
+
+        Returns:
+            Tuple containing lists of tensors for each encoding layer and pooling indices.
+        """
+
         _, S, _, _, _ = x.shape
 
         x1s = []
