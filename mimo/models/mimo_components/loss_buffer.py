@@ -25,6 +25,15 @@ class LossBuffer:
             temperature: float,
             buffer_size: int,
         ) -> None:
+        """
+        Initialize a LossBuffer.
+
+        Args:
+            subnetworks: Number of subnetworks.
+            temperature: Temperature parameter for softmax_temperature function.
+            buffer_size: Size of the buffer storing losses.
+        """
+        
         self.index = 0
         self.temperature = temperature
         self.buffer_size = buffer_size
@@ -32,16 +41,34 @@ class LossBuffer:
         self.buffer = torch.zeros(buffer_size, subnetworks)
 
     def add(self, loss: torch.Tensor) -> None:
+        """
+        Add the latest loss to the buffer.
+
+        Args:
+            loss: Loss tensor of shape [subnetworks, ].
+        """
         if not self.buffer_size == 0:
             self.buffer[self.index] = loss
             self.index = (self.index + 1) % self.buffer_size
     
     def get_mean(self) -> torch.Tensor:
+        """
+        Compute the mean per subnetwork of the stored losses in the buffer.
+
+        Returns:
+            Mean loss tensor of shape [subnetworks, ].
+        """
         if not self.buffer_size == 0:
             return torch.mean(self.buffer, dim=0)
         else:
             return torch.zeros(self.subnetworks)
         
     def get_weights(self) -> torch.Tensor:
+        """
+        Compute weights based on the mean of the stored losses in the buffer.
+
+        Returns:
+            Weight tensor of shape [subnetworks, ].
+        """
         mean = self.get_mean()
         return softmax_temperature(mean, temperature=self.temperature) * len(mean)

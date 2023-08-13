@@ -7,6 +7,31 @@ from .utils import repeat_subnetworks, compute_uncertainties
 
 
 class EnsembleModule(pl.LightningModule):
+    """
+    This module manages the ensemble of multiple MimoUnet models, allowing
+    for the aggregation of outputs from each model in the ensemble. It also
+    supports the use of Monte Carlo (MC) dropout to estimate the uncertainties
+    in predictions.
+
+    Attributes:
+        checkpoint_paths: 
+            List of file paths to the pre-trained model checkpoints.
+        monte_carlo_steps: 
+            Number of Monte Carlo forward passes to run for uncertainty estimation.
+            A value of 0 disables MC dropout. Default is 0.
+        return_raw_predictions: 
+            If set to True, the raw model predictions will be returned without
+            computing uncertainties. Default is False.
+        models: 
+            List of loaded models from the checkpoint paths.
+        loss_fn: 
+            Reference to the loss function used in the first model of the ensemble.
+            Assumes all models in the ensemble use the same loss function.
+
+    Note:
+        - It's assumed that all models in the ensemble use the same loss function.
+        - MC dropout should be used for models trained with dropout to obtain uncertainty estimates.
+    """
     def __init__(
         self,
         checkpoint_paths: List[str],
@@ -50,14 +75,20 @@ class EnsembleModule(pl.LightningModule):
         
     def forward(self, x: torch.Tensor):
         """
-        Performs a forward pass through all subnetworks of all models.
-        Performs Monte Carlo forward passes if self.monte_carlo_steps > 0.
-        
+        Performs a forward pass through all subnetworks of all models in the ensemble.
+        If `monte_carlo_steps` is greater than 0, it performs multiple forward passes
+        to estimate uncertainties.
+
         Args:
-            x: [B, C_in, H, W]
+            x (torch.Tensor): Input tensor of shape [B, C_in, H, W], where:
+                B: batch size
+                C_in: number of input channels
+                H, W: height and width of the input image
+
         Returns:
-            p1: [B, S, C_out, H, W]
-            p2: [B, S, C_out, H, W]
+            torch.Tensor: Depending on `return_raw_predictions`:
+                - If True: returns raw predictions (p1, p2) of shape [B, S, C_out, H, W]
+                - If False: returns mode, aleatoric_variance, and epistemic_variance of shape [B, C_out, H, W]
         """
         p1_list, p2_list = [], []
         
