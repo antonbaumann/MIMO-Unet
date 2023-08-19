@@ -6,7 +6,7 @@
 
 This repository contains the code for the paper [Probabilistic MIMO U-Net: Efficient and Accurate Uncertainty Estimation for Pixel-wise Regression](https://arxiv.org/abs/2308.07477).
 
-Authors: [Anton Baumann]()<sup>1</sup>, [Thomas Roßberg](https://www.unibw.de/lrt9/lrt-9.3/personen/dipl-ing-thomas-rossberg)<sup>1</sup>, [Michael Schmitt](https://scholar.google.de/citations?user=CVnD4h4AAAAJ)<sup>1</sup>\
+Authors: [Anton Baumann](https://scholar.google.com/citations?user=4CEGXaYAAAAJ)<sup>1</sup>, [Thomas Roßberg](https://www.unibw.de/lrt9/lrt-9.3/personen/dipl-ing-thomas-rossberg)<sup>1</sup>, [Michael Schmitt](https://scholar.google.de/citations?user=CVnD4h4AAAAJ)<sup>1</sup>\
 <sup>1</sup> University of the Bundeswehr Munich\
 in UnCV Workshop at ICCV 2023 (Oral Presentation)
 
