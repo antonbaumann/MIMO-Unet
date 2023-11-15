@@ -14,6 +14,7 @@ title: "Probabilistic MIMO U-Net: Efficient and Accurate Uncertainty Estimation 
 url: "https://github.com/antonbaumann/MIMO-Unet"
 preferred-citation:
   type: conference-paper
+  authors:
   - family-names: "Baumann"
     given-names: "Anton"
     orcid: "https://orcid.org/0009-0008-8509-8057"
