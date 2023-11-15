@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Baumann"
+  given-names: "Anton"
+  orcid: "https://orcid.org/0009-0008-8509-8057"
+- family-names: "Roßberg"
+  given-names: "Thomas"
+  orcid: "https://orcid.org/0000-0001-8536-1515"
+- family-names: "Schmitt"
+  given-names: "Michael"
+  orcid: "https://orcid.org/0000-0002-0575-2362"
+title: "Probabilistic MIMO U-Net: Efficient and Accurate Uncertainty Estimation for Pixel-wise Regression"
+url: "https://github.com/antonbaumann/MIMO-Unet"
+preferred-citation:
+  type: conference-paper
+  - family-names: "Baumann"
+    given-names: "Anton"
+    orcid: "https://orcid.org/0009-0008-8509-8057"
+  - family-names: "Roßberg"
+    given-names: "Thomas"
+    orcid: "https://orcid.org/0000-0001-8536-1515"
+  - family-names: "Schmitt"
+    given-names: "Michael"
+    orcid: "https://orcid.org/0000-0002-0575-2362"
+  booktitle: "Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) Workshops"
+  start: 4498 # First page number
+  end: 4506 # Last page number
+  title: "Probabilistic MIMO U-Net: Efficient and Accurate Uncertainty Estimation for Pixel-wise Regression"
+  year: 2023
+  month: October
