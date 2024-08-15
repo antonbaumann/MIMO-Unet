@@ -13,9 +13,8 @@ preferred-citation:
   - family-names: "Schmitt"
     given-names: "Michael"
     orcid: "https://orcid.org/0000-0002-0575-2362"
-  booktitle: "Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) Workshops"
-  start: 4498 # First page number
-  end: 4506 # Last page number
   title: "Probabilistic MIMO U-Net: Efficient and Accurate Uncertainty Estimation for Pixel-wise Regression"
+  booktitle: "Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) Workshops"
   year: 2023
-  month: October
+  month: 10
+  pages: "4498-4506"
